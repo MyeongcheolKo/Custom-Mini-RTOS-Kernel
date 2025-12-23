@@ -244,6 +244,8 @@ void init_task_stack(void)
 
 void task_delay(uint32_t tick_count)
 {
+	//disable interrupt 
+	INTERRUPT_DISABLE();
 	//only block the task if it not the idle task
 	if(current_task)
 	{
@@ -254,6 +256,9 @@ void task_delay(uint32_t tick_count)
 		//pend pendSV exception
 		schedule(); // switches to another task to allow other tasks to run
 	}
+
+	//enable interrupt
+	INTERRUPT_ENABLE();
 }
 
 void update_global_tick_count(void)
