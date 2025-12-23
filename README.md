@@ -42,6 +42,8 @@ The scheduler manages 4 user tasks plus an idle task, using hardware features of
   - `init_scheduler_stack`: Modifying MSP itself, prologue/epilogue would use old/new MSP inconsistently
 - **Race condition in `task_delay`** - Disabled interrupts while setting block_count and current_state to prevent a race condition with SysTick_Handler. Without this, SysTick could increment g_tick_count between reading the value and setting the blocked state, causing the == check in unblock_tasks to miss and leave the task blocked forever.
 
+## See it Working!
+![task scheduler demo](task_scheduler_demo.gif)
 ## Ideas for Future Improvements
 
 - Add priority levels
