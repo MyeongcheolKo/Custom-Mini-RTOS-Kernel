@@ -29,7 +29,7 @@ The scheduler manages 4 user tasks plus an idle task, using hardware features of
 - **Dummy stack frame** — Created so the first context switch works. When a task runs for the first time, there's no "previous context" to retrieve, so we initialize the stack with a fake frame.
 
 - **Blocking state + SysTick timer** — The delay time for software delay is actually (task delay + delays of other tasks). For example, if Task1 wants a 1000ms delay but Task2-4 also have delays of
-  500ms, 250ms, and 125ms: Task1's real wait time = 1000 + 500 + 250 + 125 = 1875ms. By adding a blocking state and using the SysTick timer, a blocked task is skipped during scheduling and the scheduler
+  500ms, 250ms, and 2000ms: Task1's real wait time = 1000 + 500 + 250 + 2000 = 3750ms. By adding a blocking state and using the SysTick timer, a blocked task is skipped during scheduling and the scheduler
   immediately moves to the next ready task. This way each task's delay is independent of what other tasks are doing.
 
 - **Idle task** — Always `READY` and never blocks, so `update_next_task()` always has a valid task to select when all other tasks are blocked.
