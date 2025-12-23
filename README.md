@@ -40,6 +40,7 @@ The scheduler manages 4 user tasks plus an idle task, using hardware features of
   - `switch_sp_to_psp`: Prologue would push LR to the old stack (MSP), then epilogue would pop from the new stack (PSP) -> corruption
   - `PendSV_Handler`: Need manual control over what gets pushed/popped to the stack and where for context switching + function calls corrupt the EXC_RETURN value in LR
   - `init_scheduler_stack`: Modifying MSP itself, prologue/epilogue would use old/new MSP inconsistently
+- **Race condition in `task_delay`** - Disabled interrupts while setting block_count and current_state to prevent a race condition with SysTick_Handler. Without this, SysTick could increment g_tick_count between reading the value and setting the blocked state, causing the == check in unblock_tasks to miss and leave the task blocked forever.
 
 ## Ideas for Future Improvements
 
