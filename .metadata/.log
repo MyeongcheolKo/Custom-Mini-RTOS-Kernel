@@ -1,0 +1,35 @@
+!SESSION 2025-12-23 22:31:34.559 -----------------------------------------------
+eclipse.buildId=Version 1.19.0
+java.version=21.0.3
+java.vendor=Eclipse Adoptium
+BootLoader constants: OS=macosx, ARCH=x86_64, WS=cocoa, NL=en_CA
+Framework arguments:  -keyring /Users/krisko/.eclipse_keyring
+Command-line arguments:  -os macosx -ws cocoa -arch x86_64 -keyring /Users/krisko/.eclipse_keyring
+
+!ENTRY com.st.stm32cube.ide.mcu.informationcenter 4 4 2025-12-23 22:31:56.593
+!MESSAGE CubeMX plugin appears to be active, Log4j initialization might be too late.
+
+!ENTRY com.st.stm32cube.ide.mcu.informationcenter 1 1 2025-12-23 22:31:56.595
+!MESSAGE Log4j2 initialized with config file /Users/krisko/Documents/GitHub/Custom-Mini-RTOS/.metadata/.log4j2.xml
+
+!ENTRY com.st.stm32cube.ide.mcu.ide 1 1 2025-12-23 22:32:00.627
+!MESSAGE Started RMI Server, listening on port 41337
+!SESSION 2025-12-23 22:33:57.405 -----------------------------------------------
+eclipse.buildId=Version 1.19.0
+java.version=21.0.3
+java.vendor=Eclipse Adoptium
+BootLoader constants: OS=macosx, ARCH=x86_64, WS=cocoa, NL=en_CA
+Framework arguments:  -keyring /Users/krisko/.eclipse_keyring
+Command-line arguments:  -os macosx -ws cocoa -arch x86_64 -keyring /Users/krisko/.eclipse_keyring
+
+!ENTRY com.st.stm32cube.ide.mcu.informationcenter 1 1 2025-12-23 22:34:32.024
+!MESSAGE Log4j2 initialized with config file /Users/krisko/Documents/GitHub/Custom-Mini-RTOS/.metadata/.log4j2.xml
+
+!ENTRY com.st.stm32cube.ide.mcu.ide 1 1 2025-12-23 22:34:37.411
+!MESSAGE Started RMI Server, listening on port 41337
+
+!ENTRY org.eclipse.cdt.core 1 0 2025-12-23 22:40:01.400
+!MESSAGE Indexed 'task_scheduler' (4 sources, 57 headers) in 1.6 sec: 2,312 declarations; 3,441 references; 0 unresolved inclusions; 3 syntax errors; 2 unresolved names (0.035%)
+
+!ENTRY com.st.stm32cube.ide.mcu.debug.swv 1 1 2025-12-23 23:37:30.359
+!MESSAGE SWV configuration; base: 36000000; minDiv: 18; maxDiv: 65535; maxSWO: 2000000; limit: 2000000 => SWO: 2000000; CPU: 16000000; div: 8

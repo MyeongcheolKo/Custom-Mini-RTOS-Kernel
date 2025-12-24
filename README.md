@@ -1,8 +1,8 @@
 # Custom-Mini-RTOS
 
-A mini RTOS I created from scratch including a task scheduler, linker script, and drivers
+A mini RTOS kernel for ARM Cortex-M built from scratch, including the supporting bare-metal infrastructure (linker script, startup code) and peripheral drivers.
 
-## Task Scheduler
+## Task Scheduler(Kernel)
 
 The scheduler manages 4 user tasks plus an idle task, using hardware features of the ARM Cortex-M architecture:
 
