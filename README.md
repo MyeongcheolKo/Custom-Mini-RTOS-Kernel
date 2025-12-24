@@ -1,6 +1,6 @@
 # Custom-Mini-RTOS
 
-A mini RTOS kernel for ARM Cortex-M built from scratch, targeting STM32F446xx (Cortex-M4), including bare-metal infrastructure (linker script, startup code) and peripheral drivers.
+A mini RTOS kernel for STM32F446xx (ARM Cortex-M4) built from scratch, including bare-metal infrastructure (linker script, startup code) and peripheral drivers.
 ## Task Scheduler(Kernel)
 
 The scheduler manages 4 user tasks plus an idle task, using hardware features of the ARM Cortex-M architecture:
