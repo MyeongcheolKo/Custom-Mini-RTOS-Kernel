@@ -13,6 +13,7 @@ extern uint32_t _sdata; //start of .data in VMA
 extern uint32_t _sidata; //start of .data in LMA
 
 int main(void);
+void __libc_init_array(void);
 
 void Reset_Handler(void);
 void NMI_Handler(void)                  __attribute__(( weak, alias ("Default_Handler")));
@@ -23,7 +24,7 @@ void UsageFault_Handler(void)           __attribute__(( weak, alias ("Default_Ha
 void SVCall_Handler(void)               __attribute__(( weak, alias ("Default_Handler")));
 void DebugMonitor_Handler(void)         __attribute__(( weak, alias ("Default_Handler")));
 void PendSV_Handler(void)               __attribute__(( weak, alias ("Default_Handler")));
-void Systick_Handler(void)              __attribute__(( weak, alias ("Default_Handler")));
+void SysTick_Handler(void)              __attribute__(( weak, alias ("Default_Handler")));
 void WWDG_IRQHandler(void)              __attribute__(( weak, alias ("Default_Handler")));
 void PVD_IRQHandler(void)               __attribute__(( weak, alias ("Default_Handler")));
 void TAMP_STAMP_IRQHandler(void)        __attribute__(( weak, alias ("Default_Handler")));
@@ -127,7 +128,7 @@ uint32_t vectors[] __attribute__ ((section(".isr_vector"))) = {
     (uint32_t) &DebugMonitor_Handler,
     0,
     (uint32_t) &PendSV_Handler,
-    (uint32_t) &Systick_Handler,
+    (uint32_t) &SysTick_Handler,
     (uint32_t) &WWDG_IRQHandler,
     (uint32_t) &PVD_IRQHandler,
     (uint32_t) &TAMP_STAMP_IRQHandler,
@@ -249,8 +250,8 @@ void Reset_Handler(void)
         *p_dst = 0;
         p_dst++;
     }
-    //call init() from std library 
-
+    //call init from std library 
+    __libc_init_array();
     //call main
     main();
 }

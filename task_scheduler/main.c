@@ -27,6 +27,8 @@
   #warning "FPU is not initialized, but the project is compiling for an FPU. Please initialize the FPU before use."
 #endif
 
+//semihosting init fcn
+extern void initialise_monitor_handles(void);
 
 int main(void)
 {
@@ -36,6 +38,10 @@ int main(void)
 	init_scheduler_stack(SCHEDU_STACK_START);
 
 	init_task_stack();
+
+	initialise_monitor_handles();
+
+	printf("Task schedular\n");
 
 	init_systick_timer(TICK_HZ);
 

@@ -61,6 +61,8 @@ _Min_Stack_Size = 0x400;
         __bss_end__ = _ebss;
         . = ALIGN(4);
         _end = .;
+        __end__ = .;
+        end = .;
     } > SRAM
 
  }
