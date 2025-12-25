@@ -6,6 +6,9 @@
     SRAM(rwx): ORIGIN = 0x20000000, LENGTH = 128K 
  }
 
+_estack = ORIGIN(SRAM) + LENGTH(SRAM);
+_Min_Stack_Size = 0x400;
+
  SECTIONS
  {
     .isr_vector :
@@ -19,6 +22,10 @@
     {
         . = ALIGN(4);
         *(.text)
+        *(.text.*)
+        *(.init)
+        *(.fini)
+        *(.)
         . = ALIGN(4);
     } > FLASH
 
@@ -26,6 +33,7 @@
     {
         . = ALIGN(4);
         *(.rodata)
+        *(.rodata.*)
         . = ALIGN(4);
     } > FLASH
 
@@ -34,6 +42,7 @@
         . = ALIGN(4);
         _sdata = .;
         *(.data)
+        *(.data.*)
         . = ALIGN(4);
         _edata = .;
     } > SRAM AT> FLASH
@@ -43,11 +52,15 @@
     {
         . = ALIGN(4);
         _sbss = .;
+        __bss_start__ = _sbss;
         *(.bss)
         *(.bss*)
         *(COMMON)
         . = ALIGN(4);
         _ebss = .; 
+        __bss_end__ = _ebss;
+        . = ALIGN(4);
+        _end = .;
     } > SRAM
 
  }

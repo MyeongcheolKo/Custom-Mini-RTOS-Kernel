@@ -1,9 +1,9 @@
 CC = arm-none-eabi-gcc
 MACH = cortex-m4
 CFLAGS = -c -mcpu=$(MACH) -mthumb -std=gnu11 -Wall -O0
-LDFLAGS = -nostdlib -T linker_script.ld -Wl,-Map=final.map
+LDFLAGS = -mcpu=$(MACH) -mthumb --specs=nano.specs -T linker_script.ld -Wl,-Map=final.map
 
-all:main.o scheduler.o sysmem.o syscalls.o startup.o final.elf
+all:main.o scheduler.o syscalls.o sysmem.o startup.o final.elf
 
 main.o:main.c
 	$(CC) $(CFLAGS) $^ -o $@
@@ -20,7 +20,7 @@ syscalls.o:syscalls.c
 startup.o:startup.c
 	$(CC) $(CFLAGS) $^ -o $@
 
-final.elf:main.o scheduler.o startup.o
+final.elf:main.o scheduler.o startup.o syscalls.o sysmem.o
 	$(CC) $(LDFLAGS) $^ -o $@
 
 clean:

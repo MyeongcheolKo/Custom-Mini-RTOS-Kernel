@@ -265,25 +265,25 @@ void SysTick_Handler(void)
 
 void HardFault_Handler(void)
 {
-	// printf("hard fault\n");
+	printf("hard fault\n");
 	while(1);
 }
 
 void MemManage_Handler(void)
 {
-	// printf("mem fault\n");
+	printf("mem fault\n");
 	while(1);
 }
 
 void BusFault_Handler(void)
 {
-	// printf("bus fault\n");
+	printf("bus fault\n");
 	while(1);
 }
 
 void UsageFault_Handler(void)
 {
-	// printf("usage fault\n");
+	printf("usage fault\n");
 	while(1);
 }
 

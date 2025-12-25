@@ -56,7 +56,7 @@ void task1_handler(void)
 	//the tasks never returns(finishes)
 	while(1)
 	{
-		// printf("This is task 1\n");
+		printf("This is task 1\n");
 		task_delay(1000);
 	}
 }
@@ -64,7 +64,7 @@ void task2_handler(void)
 {
 	while(1)
 	{
-		// printf("This is task 2 \n");
+		printf("This is task 2 \n");
 		task_delay(500);
 
 	}
@@ -73,7 +73,7 @@ void task3_handler(void)
 {
 	while(1)
 	{
-		// printf("This is task 3\n");
+		printf("This is task 3\n");
 		task_delay(250);
 
 	}
@@ -82,7 +82,7 @@ void task4_handler(void)
 {
 	while(1)
 	{
-		// printf("This is task 4\n");
+		printf("This is task 4\n");
 		task_delay(2000);
 	}
 }
