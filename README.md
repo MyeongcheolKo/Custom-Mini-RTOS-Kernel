@@ -268,7 +268,7 @@ For semihosting, build with `make semi`. This links with `rdimon.specs` instead 
 - This was coupled with make `make load` to display outputs when implmenting the linker script, startup file and makefile. 
 
 ## See It In Action!
-<video src="demo.mp4" controls width="600"></video>
+<video src="custom_mini_rtos_kernel_demo.mp4" controls width="1000"></video>
 
 ## Ideas for Future Improvements
 - Add priority levels
