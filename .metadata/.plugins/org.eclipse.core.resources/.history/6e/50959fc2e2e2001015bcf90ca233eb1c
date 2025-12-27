@@ -21,68 +21,7 @@
  */
 void GPIO_clock_control(GPIO_reg_t *p_GPIOx, uint8_t enable)
 {
-	if(enable == ENABLE)
-	{
-		if(p_GPIOx == GPIOA)
-		{
-			GPIOA_PCLK_EN();
-		}
-		else if(p_GPIOx == GPIOB)
-		{
-			GPIOB_PCLK_EN();
-		}
-		else if(p_GPIOx == GPIOC)
-		{
-			GPIOC_PCLK_EN();
-		}
-		else if(p_GPIOx == GPIOD)
-		{
-			GPIOD_PCLK_EN();
-		}
-		else if(p_GPIOx == GPIOE)
-		{
-			GPIOE_PCLK_EN();
-		}
-		else if(p_GPIOx == GPIOF)
-		{
-			GPIOF_PCLK_EN();
-		}
-		else if(p_GPIOx == GPIOH)
-		{
-			GPIOH_PCLK_EN();
-		}
 
-	}else
-	{
-		if(p_GPIOx == GPIOA)
-		{
-			GPIOA_PCLK_DI();
-		}
-		else if(p_GPIOx == GPIOB)
-		{
-			GPIOB_PCLK_DI();
-		}
-		else if(p_GPIOx == GPIOC)
-		{
-			GPIOC_PCLK_DI();
-		}
-		else if(p_GPIOx == GPIOD)
-		{
-			GPIOD_PCLK_DI();
-		}
-		else if(p_GPIOx == GPIOE)
-		{
-			GPIOE_PCLK_DI();
-		}
-		else if(p_GPIOx == GPIOF)
-		{
-			GPIOF_PCLK_DI();
-		}
-		else if(p_GPIOx == GPIOH)
-		{
-			GPIOH_PCLK_DI();
-		}
-	}
 }
 
 //initialize and disable

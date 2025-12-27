@@ -1352,3 +1352,15 @@ java.lang.Exception: The project description file (.project) for 'peripheral_dri
 
 !ENTRY com.st.stm32cube.ide.mcu.toolchain.arm-none 4 4 2025-12-27 00:02:21.857
 !MESSAGE Failed to get MCU from name "" in toolchain com.st.stm32cube.ide.mcu.gnu.managedbuild.toolchain.base.53642298
+
+!ENTRY com.st.stm32cube.ide.mcu.toolchain.arm-none 4 4 2025-12-27 00:13:20.759
+!MESSAGE Failed to get MCU from name "" in toolchain com.st.stm32cube.ide.mcu.gnu.managedbuild.toolchain.base.53642298
+
+!ENTRY com.st.stm32cube.ide.mcu.toolchain.arm-none 4 4 2025-12-27 00:13:20.761
+!MESSAGE Failed to get MCU from name "" in toolchain com.st.stm32cube.ide.mcu.gnu.managedbuild.toolchain.base.53642298
+
+!ENTRY com.st.stm32cube.ide.mcu.toolchain.arm-none 4 4 2025-12-27 00:17:48.263
+!MESSAGE Failed to get MCU from name "" in toolchain com.st.stm32cube.ide.mcu.gnu.managedbuild.toolchain.base.53642298
+
+!ENTRY com.st.stm32cube.ide.mcu.toolchain.arm-none 4 4 2025-12-27 00:17:48.268
+!MESSAGE Failed to get MCU from name "" in toolchain com.st.stm32cube.ide.mcu.gnu.managedbuild.toolchain.base.53642298

@@ -1,4 +1,4 @@
-00:02:21 **** Incremental Build of configuration Default for project STM32F446xx_peripheral_drivers ****
+00:17:47 **** Incremental Build of configuration Default for project STM32F446xx_peripheral_drivers ****
 make all 
 arm-none-eabi-gcc -c -mcpu=cortex-m4 -mthumb -mfloat-abi=soft -std=gnu11 -Wall -O0 -g -Idrivers drivers/GPIO_driver.c -o GPIO_driver.o
 arm-none-eabi-gcc -mcpu=cortex-m4 -mthumb -mfloat-abi=soft --specs=nano.specs -T linker_script.ld -Wl,-Map=final.map main.o startup.o syscalls.o sysmem.o GPIO_driver.o -o final.elf

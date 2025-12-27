@@ -94,8 +94,6 @@ typedef struct{
 #define GPIOD 	((GPIO_reg_t*)GPIOD_BASEADDR)
 #define GPIOE 	((GPIO_reg_t*)GPIOE_BASEADDR)
 #define GPIOF 	((GPIO_reg_t*)GPIOF_BASEADDR)
-#define GPIOG 	((GPIO_reg_t*)GPIOG_BASEADDR)
-#define GPIOH 	((GPIO_reg_t*)GPIOH_BASEADDR)
 
 //RCC
 typedef struct{
@@ -146,8 +144,7 @@ typedef struct{
 #define GPIOD_PCLK_EN() ( RCC->AHB1ENR |= (1 << 3) )
 #define GPIOE_PCLK_EN() ( RCC->AHB1ENR |= (1 << 4) )
 #define GPIOF_PCLK_EN() ( RCC->AHB1ENR |= (1 << 5) )
-#define GPIOG_PCLK_EN() ( RCC->AHB1ENR |= (1 << 6) )
-#define GPIOH_PCLK_EN() ( RCC->AHB1ENR |= (1 << 7) )
+#define GPIOH_PCLK_EN() ( RCC->AHB1ENR |= (1 << 6) )
 
 /*
  * clock enable macros for I2C peripherals
@@ -183,8 +180,7 @@ typedef struct{
 #define GPIOD_PCLK_DI() ( RCC->AHB1ENR &= ~(1 << 3) )
 #define GPIOE_PCLK_DI() ( RCC->AHB1ENR &= ~(1 << 4) )
 #define GPIOF_PCLK_DI() ( RCC->AHB1ENR &= ~(1 << 5) )
-#define GPIOG_PCLK_DI() ( RCC->AHB1ENR &= ~(1 << 6) )
-#define GPIOH_PCLK_DI() ( RCC->AHB1ENR &= ~(1 << 7) )
+#define GPIOH_PCLK_DI() ( RCC->AHB1ENR &= ~(1 << 6) )
 
 /*
  * clock disable macros for I2C peripherals
