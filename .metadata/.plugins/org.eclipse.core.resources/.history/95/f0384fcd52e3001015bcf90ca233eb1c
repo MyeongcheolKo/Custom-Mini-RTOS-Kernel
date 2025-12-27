@@ -150,37 +150,9 @@ void GPIO_init(GPIO_Handle_t *p_GPIO_Handle)
 	}
 }
 
-void GPIO_deinit(GPIO_reg_t *p_GPIOx)
+void GPIO_disable(GPIO_reg_t *p_GPIOx)// only need to set reset register
 {
-	// only need to set reset register to reset the GPIO port registers
-	if(p_GPIOx == GPIOA)
-	{
-		GPIOA_RESET();
-	}
-	else if(p_GPIOx == GPIOB)
-	{
-		GPIOB_RESET();
-	}
-	else if(p_GPIOx == GPIOC)
-	{
-		GPIOC_RESET();
-	}
-	else if(p_GPIOx == GPIOD)
-	{
-		GPIOD_RESET();
-	}
-	else if(p_GPIOx == GPIOE)
-	{
-		GPIOE_RESET();
-	}
-	else if(p_GPIOx == GPIOF)
-	{
-		GPIOF_RESET();
-	}
-	else if(p_GPIOx == GPIOH)
-	{
-		GPIOH_RESET();
-	}
+
 }
 
 //read and write

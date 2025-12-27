@@ -17,7 +17,7 @@ typedef struct{
 	uint8_t GPIO_pin_num;				//!< possible values from @GPIO_PIN_NUMBERS
 	uint8_t GPIO_pin_mode;				//!< possible values from @GPIO_PIN_MODES
 	uint8_t GPIO_pin_speed;				//!< possible values from @GPIO_PIN_SPEEDS
-	uint8_t GPIO_pin_pupd;		//!< possible values from @GPIO_PUPD
+	uint8_t GPIO_pin_pupd_control;		//!< possible values from @GPIO_PUPD
 	uint8_t GPIO_pin_out_type;			//!< possible values from @GPIO_OUT_TYPES
 	uint8_t GPIO_pin_alt_fcn_mode;
 }GPIO_pin_config_t;
@@ -98,9 +98,9 @@ typedef struct{
 //clock setup
 void GPIO_clock_control(GPIO_reg_t *p_GPIOx, uint8_t enable);
 
-//initialize and diinitialize
+//initialize and disable
 void GPIO_init(GPIO_Handle_t *p_GPIO_Handle);
-void GPIO_deinit(GPIO_reg_t *p_GPIOx);
+void GPIO_disable(GPIO_reg_t *p_GPIOx); // only need to set reset register
 
 //read and write
 uint8_t GPIO_read_input_pin(GPIO_reg_t *p_GPIOx, uint8_t pin_num);

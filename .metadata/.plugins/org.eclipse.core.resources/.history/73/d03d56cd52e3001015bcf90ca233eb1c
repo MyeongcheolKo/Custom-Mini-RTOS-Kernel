@@ -98,9 +98,9 @@ typedef struct{
 //clock setup
 void GPIO_clock_control(GPIO_reg_t *p_GPIOx, uint8_t enable);
 
-//initialize and diinitialize
+//initialize and disable
 void GPIO_init(GPIO_Handle_t *p_GPIO_Handle);
-void GPIO_deinit(GPIO_reg_t *p_GPIOx);
+void GPIO_disable(GPIO_reg_t *p_GPIOx); // only need to set reset register
 
 //read and write
 uint8_t GPIO_read_input_pin(GPIO_reg_t *p_GPIOx, uint8_t pin_num);
