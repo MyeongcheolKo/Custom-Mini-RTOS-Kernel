@@ -87,9 +87,9 @@ typedef struct{
  * @GPIO_PUPD
  * GPIO pin pull up and pull down config
  */
-#define GPIO_PIN_NONE	0 	//no pull up nor pull down
-#define GPIO_PIN_PU		1	//pull up
-#define GPIO_PIN_PD		2	//pull down
+#define GPIO_PIN_NO_PUPD	0 	//no pull up nor pull down
+#define GPIO_PIN_PU			1	//pull up
+#define GPIO_PIN_PD			2	//pull down
 
 
 

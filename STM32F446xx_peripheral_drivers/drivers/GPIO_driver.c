@@ -16,8 +16,6 @@
  * @param:			ENABLE or DISABLE macros
  *
  * @return: 		none
- *
- * @Note: 			none
  */
 void GPIO_clock_control(GPIO_reg_t *p_GPIOx, uint8_t enable)
 {
@@ -93,12 +91,10 @@ void GPIO_clock_control(GPIO_reg_t *p_GPIOx, uint8_t enable)
  * @param:			base address of GPIO peripheral
  *
  * @return: 		none
- *
- * @Note: 			none
  */
 void GPIO_init(GPIO_Handle_t *p_GPIO_Handle)
 {
-	uint8_t temp;
+	uint32_t temp;
 	uint8_t mode = p_GPIO_Handle->GPIO_config.GPIO_pin_mode;
 	uint8_t pin = p_GPIO_Handle->GPIO_config.GPIO_pin_num;
 	//config mode
@@ -116,7 +112,7 @@ void GPIO_init(GPIO_Handle_t *p_GPIO_Handle)
 	{
 		//config output type
 		temp = p_GPIO_Handle->p_GPIOx->OTYPER;
-		temp &= ~(0b11 << pin );
+		temp &= ~(0b1 << pin );
 		temp |= (p_GPIO_Handle->GPIO_config.GPIO_pin_out_type << pin );
 		p_GPIO_Handle->p_GPIOx->OTYPER = temp;
 		temp = 0;
@@ -149,60 +145,124 @@ void GPIO_init(GPIO_Handle_t *p_GPIO_Handle)
 
 	}
 }
-
+/*
+ * @fcn:			GPIO_deinit
+ *
+ * @brief:			This function resets all registers of the given GPIO port
+ *
+ * @param:			base address of GPIO port registers
+ *
+ * @return: 		none
+ */
 void GPIO_deinit(GPIO_reg_t *p_GPIOx)
 {
 	// only need to set reset register to reset the GPIO port registers
 	if(p_GPIOx == GPIOA)
 	{
-		GPIOA_RESET();
+		GPIOA_REG_RESET();
 	}
 	else if(p_GPIOx == GPIOB)
 	{
-		GPIOB_RESET();
+		GPIOB_REG_RESET();
 	}
 	else if(p_GPIOx == GPIOC)
 	{
-		GPIOC_RESET();
+		GPIOC_REG_RESET();
 	}
 	else if(p_GPIOx == GPIOD)
 	{
-		GPIOD_RESET();
+		GPIOD_REG_RESET();
 	}
 	else if(p_GPIOx == GPIOE)
 	{
-		GPIOE_RESET();
+		GPIOE_REG_RESET();
 	}
 	else if(p_GPIOx == GPIOF)
 	{
-		GPIOF_RESET();
+		GPIOF_REG_RESET();
 	}
 	else if(p_GPIOx == GPIOH)
 	{
-		GPIOH_RESET();
+		GPIOH_REG_RESET();
 	}
 }
 
-//read and write
+/*
+ * @fcn:			GPIO_read_input_pin
+ *
+ * @brief:			This function reads the input value of the given GPIO pin
+ *
+ * @param:			base address of GPIO port registers
+ * @param:			the specific pin number to read
+ *
+ * @return: 		the input value(0 or 1) of the pin
+ */
 uint8_t GPIO_read_input_pin(GPIO_reg_t *p_GPIOx, uint8_t pin_num)
 {
-	return 0;
+	//shift to the right instead of shifting 1 to the left and do & bc that would not create 0 or 1 as output
+	return (p_GPIOx->IDR >> pin_num) & 1;
 }
+/*
+ * @fcn:			GPIO_read_input_port
+ *
+ * @brief:			This function reads the input value of the given GPIO port
+ *
+ * @param:			base address of GPIO port registers
+ *
+ * @return: 		the input value of the 16 pins of the port
+ */
 uint16_t GPIO_read_input_port(GPIO_reg_t *p_GPIOx)
 {
-	return 0;
+	return p_GPIOx->IDR;
 }
+/*
+ * @fcn:			GPIO_write_output_pin
+ *
+ * @brief:			This function writes the given value to the given GPIO pin
+ *
+ * @param:			base address of GPIO port registers
+ * @param:			pin number to write value to
+ * @param:			value to write to the pin
+ *
+ * @return: 		none
+ */
 void GPIO_write_output_pin(GPIO_reg_t *p_GPIOx, uint8_t pin_num, uint8_t val)
 {
-
+	if(val == SET)
+	{
+		p_GPIOx->ODR |= (1 << pin_num);
+	}else
+	{
+		p_GPIOx->ODR &= ~(1 << pin_num);
+	}
 }
+/*
+ * @fcn:			GPIO_write_output_port
+ *
+ * @brief:			This function writes the given value to the given GPIO port
+ *
+ * @param:			base address of GPIO port registers
+ * @param:			value to write to the port
+ *
+ * @return: 		none
+ */
 void GPIO_write_output_port(GPIO_reg_t *p_GPIOx, uint16_t val)
 {
-
+	p_GPIOx->ODR = val;
 }
+/*
+ * @fcn:			GPIO_toggle_output_pin
+ *
+ * @brief:			This function toggles the given GPIO pin
+ *
+ * @param:			base address of GPIO port registers
+ * @param:			pin number to toggle
+ *
+ * @return: 		none
+ */
 void GPIO_toggle_output_pin(GPIO_reg_t *p_GPIOx, uint8_t pin_num)
 {
-
+	p_GPIOx->ODR ^= (1 << pin_num);
 }
 
 //IQR configuration and handling

@@ -7,6 +7,8 @@
 
 #include<stdint.h>
 
+
+
 #ifndef DRIVERS_STM32F446XX_H_
 #define DRIVERS_STM32F446XX_H_
 
@@ -73,7 +75,7 @@
  * matches the offsets of the registers so we can access the registers access via the struct, like GPIOA->MODER = ...
  */
 
-//GPIO
+//GPIO port registers
 typedef struct{
 	volatile uint32_t MODER; 	//GPIO port mode register
 	volatile uint32_t OTYPER; 	//GPIO port output type register
@@ -210,18 +212,18 @@ typedef struct{
 #define UART5_PCLK_DI()		( RCC->APB1LPENR &= ~(1 << 20) )
 
 /*
- * reset macros for GPIO peripherals
+ * reset GPIO peripherals registers
  */
 //have to set the register bit back to 0 after setting it to 1 for reset so it is releases for later use
 //otherwise it will be held at reset
-#define GPIOA_RESET()		do{ RCC->AHB1RSTR |= (1 << 0); RCC->AHB1RSTR &= ~(1 << 0);}while(0)
-#define GPIOB_RESET()		do{ RCC->AHB1RSTR |= (1 << 1); RCC->AHB1RSTR &= ~(1 << 1);}while(0)
-#define GPIOC_RESET()		do{ RCC->AHB1RSTR |= (1 << 2); RCC->AHB1RSTR &= ~(1 << 2);}while(0)
-#define GPIOD_RESET()		do{ RCC->AHB1RSTR |= (1 << 3); RCC->AHB1RSTR &= ~(1 << 3);}while(0)
-#define GPIOE_RESET()		do{ RCC->AHB1RSTR |= (1 << 4); RCC->AHB1RSTR &= ~(1 << 4);}while(0)
-#define GPIOF_RESET()		do{ RCC->AHB1RSTR |= (1 << 5); RCC->AHB1RSTR &= ~(1 << 5);}while(0)
-#define GPIOG_RESET()		do{ RCC->AHB1RSTR |= (1 << 6); RCC->AHB1RSTR &= ~(1 << 6);}while(0)
-#define GPIOH_RESET()		do{ RCC->AHB1RSTR |= (1 << 7); RCC->AHB1RSTR &= ~(1 << 7);}while(0)
+#define GPIOA_REG_RESET()		do{ RCC->AHB1RSTR |= (1 << 0); RCC->AHB1RSTR &= ~(1 << 0);}while(0)
+#define GPIOB_REG_RESET()		do{ RCC->AHB1RSTR |= (1 << 1); RCC->AHB1RSTR &= ~(1 << 1);}while(0)
+#define GPIOC_REG_RESET()		do{ RCC->AHB1RSTR |= (1 << 2); RCC->AHB1RSTR &= ~(1 << 2);}while(0)
+#define GPIOD_REG_RESET()		do{ RCC->AHB1RSTR |= (1 << 3); RCC->AHB1RSTR &= ~(1 << 3);}while(0)
+#define GPIOE_REG_RESET()		do{ RCC->AHB1RSTR |= (1 << 4); RCC->AHB1RSTR &= ~(1 << 4);}while(0)
+#define GPIOF_REG_RESET()		do{ RCC->AHB1RSTR |= (1 << 5); RCC->AHB1RSTR &= ~(1 << 5);}while(0)
+#define GPIOG_REG_RESET()		do{ RCC->AHB1RSTR |= (1 << 6); RCC->AHB1RSTR &= ~(1 << 6);}while(0)
+#define GPIOH_REG_RESET()		do{ RCC->AHB1RSTR |= (1 << 7); RCC->AHB1RSTR &= ~(1 << 7);}while(0)
 
 //some generic macros
 #define ENABLE 		1

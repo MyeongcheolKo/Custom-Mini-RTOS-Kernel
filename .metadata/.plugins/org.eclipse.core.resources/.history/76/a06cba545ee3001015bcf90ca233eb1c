@@ -1,0 +1,217 @@
+/*
+ * STM32F446xx_GPIO_driver.c
+ *
+ *  Created on: Dec 26, 2025
+ *      Author: krisko
+ */
+#include "GPIO_driver.h"
+
+
+/*
+ * @fcn:			GPIO_clock_control
+ *
+ * @brief:			This function enables or disables the peripheral clock for the given GPIO port
+ *
+ * @param:			base address of GPIO peripheral
+ * @param:			ENABLE or DISABLE macros
+ *
+ * @return: 		none
+ *
+ * @Note: 			none
+ */
+void GPIO_clock_control(GPIO_reg_t *p_GPIOx, uint8_t enable)
+{
+	if(enable == ENABLE)
+	{
+		if(p_GPIOx == GPIOA)
+		{
+			GPIOA_PCLK_EN();
+		}
+		else if(p_GPIOx == GPIOB)
+		{
+			GPIOB_PCLK_EN();
+		}
+		else if(p_GPIOx == GPIOC)
+		{
+			GPIOC_PCLK_EN();
+		}
+		else if(p_GPIOx == GPIOD)
+		{
+			GPIOD_PCLK_EN();
+		}
+		else if(p_GPIOx == GPIOE)
+		{
+			GPIOE_PCLK_EN();
+		}
+		else if(p_GPIOx == GPIOF)
+		{
+			GPIOF_PCLK_EN();
+		}
+		else if(p_GPIOx == GPIOH)
+		{
+			GPIOH_PCLK_EN();
+		}
+
+	}else
+	{
+		if(p_GPIOx == GPIOA)
+		{
+			GPIOA_PCLK_DI();
+		}
+		else if(p_GPIOx == GPIOB)
+		{
+			GPIOB_PCLK_DI();
+		}
+		else if(p_GPIOx == GPIOC)
+		{
+			GPIOC_PCLK_DI();
+		}
+		else if(p_GPIOx == GPIOD)
+		{
+			GPIOD_PCLK_DI();
+		}
+		else if(p_GPIOx == GPIOE)
+		{
+			GPIOE_PCLK_DI();
+		}
+		else if(p_GPIOx == GPIOF)
+		{
+			GPIOF_PCLK_DI();
+		}
+		else if(p_GPIOx == GPIOH)
+		{
+			GPIOH_PCLK_DI();
+		}
+	}
+}
+
+/*
+ * @fcn:			GPIO_init
+ *
+ * @brief:			This function initialize the given GPIO port
+ *
+ * @param:			base address of GPIO peripheral
+ *
+ * @return: 		none
+ *
+ * @Note: 			none
+ */
+void GPIO_init(GPIO_Handle_t *p_GPIO_Handle)
+{
+	uint8_t temp;
+	uint8_t mode = p_GPIO_Handle->GPIO_config.GPIO_pin_mode;
+	uint8_t pin = p_GPIO_Handle->GPIO_config.GPIO_pin_num;
+	//config mode
+	if(mode <= GPIO_MODE_ANALOG)
+	{
+		temp = p_GPIO_Handle->p_GPIOx->MODER;	//read
+		temp &= ~(0b11 << (2 * pin) );			//clear
+		temp |= (mode << (2 * pin) );			//write to temp only
+		p_GPIO_Handle->p_GPIOx->MODER = temp; 	//right back to the register
+		temp = 0;
+	}else{
+		//interrupt modes
+	}
+	if(mode == GPIO_MODE_OUT)
+	{
+		//config output type
+		temp = p_GPIO_Handle->p_GPIOx->OTYPER;
+		temp &= ~(0b11 << pin );
+		temp |= (p_GPIO_Handle->GPIO_config.GPIO_pin_out_type << pin );
+		p_GPIO_Handle->p_GPIOx->OTYPER = temp;
+		temp = 0;
+
+		//config output speed
+		temp = p_GPIO_Handle->p_GPIOx->OSPEEDR;
+		temp &= ~(0b11 << (2 * pin) );
+		temp |= (p_GPIO_Handle->GPIO_config.GPIO_pin_speed << (2 * pin) );
+		p_GPIO_Handle->p_GPIOx->OSPEEDR = temp;
+		temp = 0;
+	}
+
+	//config pull up/pull down settings
+	temp = p_GPIO_Handle->p_GPIOx->PUPDR;
+	temp &= ~(0b11 << (2 * pin) );
+	temp |= (p_GPIO_Handle->GPIO_config.GPIO_pin_pupd << (2 * pin) );
+	p_GPIO_Handle->p_GPIOx->PUPDR = temp;
+	temp = 0;
+
+	//config alt functionality
+	if (mode == GPIO_MODE_ALTFUNC)
+	{
+		uint8_t temp1 = pin / 8;	//which register, 0(AFRL) or 1(AFRH)
+		uint8_t temp2 = pin % 8;	//position within 0-7 for the pin in the corresponding register
+		temp = p_GPIO_Handle->p_GPIOx->AFR[temp1];
+		temp &= ~(0b1111 << (4 * temp2) );
+		temp |= (p_GPIO_Handle->GPIO_config.GPIO_pin_alt_fcn_mode << (4 * temp2) );
+		p_GPIO_Handle->p_GPIOx->AFR[temp1] = temp;
+		temp = 0;
+
+	}
+}
+
+void GPIO_deinit(GPIO_reg_t *p_GPIOx)
+{
+	// only need to set reset register to reset the GPIO port registers
+	if(p_GPIOx == GPIOA)
+	{
+		GPIOA_RESET();
+	}
+	else if(p_GPIOx == GPIOB)
+	{
+		GPIOB_RESET();
+	}
+	else if(p_GPIOx == GPIOC)
+	{
+		GPIOC_RESET();
+	}
+	else if(p_GPIOx == GPIOD)
+	{
+		GPIOD_RESET();
+	}
+	else if(p_GPIOx == GPIOE)
+	{
+		GPIOE_RESET();
+	}
+	else if(p_GPIOx == GPIOF)
+	{
+		GPIOF_RESET();
+	}
+	else if(p_GPIOx == GPIOH)
+	{
+		GPIOH_RESET();
+	}
+}
+
+//read and write
+uint8_t GPIO_read_input_pin(GPIO_reg_t *p_GPIOx, uint8_t pin_num)
+{
+	return 0;
+}
+uint16_t GPIO_read_input_port(GPIO_reg_t *p_GPIOx)
+{
+	return 0;
+}
+void GPIO_write_output_pin(GPIO_reg_t *p_GPIOx, uint8_t pin_num, uint8_t val)
+{
+
+}
+void GPIO_write_output_port(GPIO_reg_t *p_GPIOx, uint16_t val)
+{
+
+}
+void GPIO_toggle_output_pin(GPIO_reg_t *p_GPIOx, uint8_t pin_num)
+{
+
+}
+
+//IQR configuration and handling
+void GPIO_IRQ_config(uint8_t IRQ_num, uint8_t IRQ_priority, uint8_t enable)
+{
+
+}
+void GPIO_IRQ_handler(uint8_t pin_num)
+{
+
+}
+

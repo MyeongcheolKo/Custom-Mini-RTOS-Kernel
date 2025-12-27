@@ -1,0 +1,30 @@
+/*
+ * LED_Toggle.c
+ *
+ *  Created on: Dec 27, 2025
+ *      Author: krisko
+ */
+
+#include "GPIO_driver.h"
+
+/*
+ * This sample application toggles the onboard LD2 on the nucleo STM32F446RE board using the GPIO driver
+ */
+int main(void)
+{
+	GPIO_Handle_t GPIO_led;
+
+	GPIO_led.p_GPIOx = GPIOA; 	//LD2 is connected to PA5
+	GPIO_led.GPIO_config.GPIO_pin_num = GPIO_PIN;
+	GPIO_led.GPIO_config.GPIO_pin_mode = GPIO_MODE_OUT;
+	GPIO_led.GPIO_config.GPIO_pin_speed = GPIO_OUT_SPEED_FAST;
+	GPIO_led.GPIO_config.GPIO_pin_out_type = GPIO_OUT_TYPE_PP;
+	GPIO_led.GPIO_config.GPIO_pin_pupd = GPIO_PIN_NO_PUPD;
+
+
+
+
+	return 0;
+}
+
+
