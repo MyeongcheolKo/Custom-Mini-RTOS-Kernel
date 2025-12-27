@@ -1,34 +1,5 @@
-23:37:15 **** Clean-only build of configuration Debug for project task_scheduler ****
-make -j11 clean 
-rm -rf ./Startup/startup_stm32f446retx.d ./Startup/startup_stm32f446retx.o
-rm -rf ./Src/main.cyclo ./Src/main.d ./Src/main.o ./Src/main.su ./Src/syscalls.cyclo ./Src/syscalls.d ./Src/syscalls.o ./Src/syscalls.su ./Src/sysmem.cyclo ./Src/sysmem.d ./Src/sysmem.o ./Src/sysmem.su
-rm -rf default.size.stdout task_scheduler.elf task_scheduler.list task_scheduler.map
- 
-23:37:15 **** Build of configuration Debug for project task_scheduler ****
-make -j11 all 
-arm-none-eabi-gcc -mcpu=cortex-m4 -g3 -DDEBUG -c -x assembler-with-cpp -MMD -MP -MF"Startup/startup_stm32f446retx.d" -MT"Startup/startup_stm32f446retx.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Startup/startup_stm32f446retx.o" "../Startup/startup_stm32f446retx.s"
-arm-none-eabi-gcc "../Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DSTM32 -DSTM32F4 -DSTM32F446RETx -DNUCLEO_F446RE -c -I../Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Src/main.d" -MT"Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Src/main.o"
-arm-none-eabi-gcc "../Src/scheduler.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DSTM32 -DSTM32F4 -DSTM32F446RETx -DNUCLEO_F446RE -c -I../Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Src/scheduler.d" -MT"Src/scheduler.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Src/scheduler.o"
-arm-none-eabi-gcc "../Src/syscalls.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DSTM32 -DSTM32F4 -DSTM32F446RETx -DNUCLEO_F446RE -c -I../Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Src/syscalls.d" -MT"Src/syscalls.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Src/syscalls.o"
-arm-none-eabi-gcc "../Src/sysmem.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DSTM32 -DSTM32F4 -DSTM32F446RETx -DNUCLEO_F446RE -c -I../Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Src/sysmem.d" -MT"Src/sysmem.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Src/sysmem.o"
-../Src/main.c:27:4: warning: #warning "FPU is not initialized, but the project is compiling for an FPU. Please initialize the FPU before use." [-Wcpp]
-   27 |   #warning "FPU is not initialized, but the project is compiling for an FPU. Please initialize the FPU before use."
-      |    ^~~~~~~
-arm-none-eabi-gcc -o "task_scheduler.elf" @"objects.list"   -mcpu=cortex-m4 -T"/Users/krisko/Documents/GitHub/Custom-Mini-RTOS/task_scheduler/STM32F446RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="task_scheduler.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
-Finished building target: task_scheduler.elf
- 
-arm-none-eabi-size  task_scheduler.elf 
-arm-none-eabi-objdump -h -S task_scheduler.elf  > "task_scheduler.list"
-   text	   data	    bss	    dec	    hex	filename
-   4816	     96	   1984	   6896	   1af0	task_scheduler.elf
-Finished building: default.size.stdout
- 
-Finished building: task_scheduler.list
- 
-23:37:26 **** Incremental Build of configuration Debug for project task_scheduler ****
-make -j11 all 
-arm-none-eabi-size  task_scheduler.elf 
-   text	   data	    bss	    dec	    hex	filename
-   4816	     96	   1984	   6896	   1af0	task_scheduler.elf
-Finished building: default.size.stdout
- 
+00:02:21 **** Incremental Build of configuration Default for project STM32F446xx_peripheral_drivers ****
+make all 
+arm-none-eabi-gcc -c -mcpu=cortex-m4 -mthumb -mfloat-abi=soft -std=gnu11 -Wall -O0 -g -Idrivers drivers/GPIO_driver.c -o GPIO_driver.o
+arm-none-eabi-gcc -mcpu=cortex-m4 -mthumb -mfloat-abi=soft --specs=nano.specs -T linker_script.ld -Wl,-Map=final.map main.o startup.o syscalls.o sysmem.o GPIO_driver.o -o final.elf
+/Applications/STM32CubeIDE.app/Contents/Eclipse/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.13.3.rel1.macos64_1.0.0.202411102158/tools/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/bin/ld: warning: final.elf has a LOAD segment with RWX permissions

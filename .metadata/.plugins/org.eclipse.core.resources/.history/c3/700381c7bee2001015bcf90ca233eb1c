@@ -1,0 +1,15 @@
+/*
+ * main.c
+ *
+ *  Created on: Dec 26, 2025
+ *      Author: krisko
+ */
+
+#include "STM32F446xx.h"
+
+int main()
+{
+
+}
+
+
