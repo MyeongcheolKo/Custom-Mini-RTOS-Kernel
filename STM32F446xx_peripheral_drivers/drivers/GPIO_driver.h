@@ -30,7 +30,6 @@ typedef struct{
 	GPIO_pin_config_t GPIO_config; 	//!< the GPIO configuration settings specified by user
 }GPIO_Handle_t;
 
-
 /*
  * @GPIO_PIN_NUMBERS
  */
@@ -51,7 +50,6 @@ typedef struct{
 #define GPIO_PIN_NO_14	14
 #define GPIO_PIN_NO_15	15
 
-
 /*
  * @GPIO_PIN_MODES
  * GPIO pin possible modes
@@ -65,7 +63,6 @@ typedef struct{
 #define GPIO_MODE_IT_FT 	4 	//falling edge
 #define GPIO_MODE_IT_RT 	5	//rising edge
 #define GPIO_MODE_IT_RFT 	6	//rising and falling
-
 
 /*
  * @GPIO_OUT_TYPES
@@ -110,7 +107,8 @@ void GPIO_write_output_port(GPIO_reg_t *p_GPIOx, uint16_t val);
 void GPIO_toggle_output_pin(GPIO_reg_t *p_GPIOx, uint8_t pin_num);
 
 //IQR configuration and handling
-void GPIO_IRQ_config(uint8_t IRQ_num, uint8_t IRQ_priority, uint8_t enable);
+void GPIO_IRQ_config(uint8_t IRQ_num, uint8_t enable);
+void GPIO_set_priority(uint8_t IRQ_num, uint8_t IRQ_priority);
 void GPIO_IRQ_handler(uint8_t pin_num);
 
 

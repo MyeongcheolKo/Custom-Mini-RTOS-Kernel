@@ -12,6 +12,21 @@
 #ifndef DRIVERS_STM32F446XX_H_
 #define DRIVERS_STM32F446XX_H_
 
+//NVIC register addresses
+#define NVIC_ISER0 		(volatile uint32_t*)0xE000E100
+#define NVIC_ISER1 		(volatile uint32_t*)0xE000E104
+#define NVIC_ISER2 		(volatile uint32_t*)0xE000E108
+#define NVIC_ISER3 		(volatile uint32_t*)0xE000E10C
+
+#define NVIC_ICER0 		(volatile uint32_t*)0XE000E180
+#define NVIC_ICER1 		(volatile uint32_t*)0XE000E184
+#define NVIC_ICER2 		(volatile uint32_t*)0XE000E188
+#define NVIC_ICER3 		(volatile uint32_t*)0XE000E18C
+
+#define NVIC_IPR_BASEADDR 		(volatile uint32_t*)0xE000E400
+
+
+
 //base address of FLASH and SRAM
 #define FLASH_BASEADDR 	0x08000000U
 #define ROM_BASEADDR 	0x1FFF0000U
@@ -98,7 +113,7 @@ typedef struct{
 #define GPIOG 	((GPIO_reg_t*)GPIOG_BASEADDR)
 #define GPIOH 	((GPIO_reg_t*)GPIOH_BASEADDR)
 
-//RCC
+//RCC register structure
 typedef struct{
 	volatile uint32_t CR; 			//RCC clock control register
 	volatile uint32_t PLLCFGR; 		//RCC PLL configuration register
@@ -138,6 +153,28 @@ typedef struct{
 
 #define RCC ((RCC_reg_t*) RCC_BASEADDR)
 
+//EXTI register structure
+typedef struct{
+	volatile uint32_t IMR;			//Interrupt mask register
+	volatile uint32_t EMR;			//Event mask register
+	volatile uint32_t RTSR;			//Rising trigger selection register
+	volatile uint32_t FTSR;			//Falling trigger selection register
+	volatile uint32_t SWIER;		//Software interrupt event register
+	volatile uint32_t PR;			//Pending register
+}EXTI_reg_t;
+
+#define EXTI ((EXTI_reg_t*) EXTI_BASEADDR)
+
+//SYSCFG register structure
+typedef struct{
+	volatile uint32_t MEMRMP;
+	volatile uint32_t PMC;
+	volatile uint32_t EXTICR[4];
+	volatile uint32_t CMPCR;
+	volatile uint32_t CFGR;
+}SYSCFG_reg_t;
+
+#define SYSCFG ( (SYSCFG_reg_t*) SYSCFG_BASEADDR)
 /*
  * clock enable macros for GPIO peripherals
  */
@@ -174,6 +211,11 @@ typedef struct{
 #define UART4_PCLK_EN()		( RCC->APB1LPENR |= (1 << 19) )
 #define UART5_PCLK_EN()		( RCC->APB1LPENR |= (1 << 20) )
 #define USART6_PCLK_EN()	( RCC->APB2LPENR |= (1 << 5) )
+
+/*
+ * clock enable macros for SYSCFG
+ */
+#define SYSCFG_PCLK_EN()	( RCC->APB2ENR |= (1 << 14) )
 
 /*
  * clock disable macros for GPIO peripherals
@@ -224,6 +266,29 @@ typedef struct{
 #define GPIOF_REG_RESET()		do{ RCC->AHB1RSTR |= (1 << 5); RCC->AHB1RSTR &= ~(1 << 5);}while(0)
 #define GPIOG_REG_RESET()		do{ RCC->AHB1RSTR |= (1 << 6); RCC->AHB1RSTR &= ~(1 << 6);}while(0)
 #define GPIOH_REG_RESET()		do{ RCC->AHB1RSTR |= (1 << 7); RCC->AHB1RSTR &= ~(1 << 7);}while(0)
+
+/*
+ * convert GPIO port to port code
+ */
+#define GPIO_BASEADDR_TO_CODE(x)	((x == GPIOA) ? 0 :\
+									(x == GPIOB) ? 1 :\
+									(x == GPIOC) ? 2 :\
+									(x == GPIOD) ? 3 :\
+									(x == GPIOE) ? 4 :\
+									(x == GPIOF) ? 5 :\
+									(x == GPIOG) ? 6 :\
+									(x == GPIOH) ? 7 :0 )
+/*
+ * IRQ numbers for each interrupt
+ */
+#define IRQ_NO_EXTI0		6
+#define IRQ_NO_EXTI1    	7
+#define IRQ_NO_EXTI2    	8
+#define IRQ_NO_EXTI3    	9
+#define IRQ_NO_EXTI4    	10
+#define IRQ_NO_EXTI9_5  	23
+#define IRQ_NO_EXTI15_10    40
+
 
 //some generic macros
 #define ENABLE 		1

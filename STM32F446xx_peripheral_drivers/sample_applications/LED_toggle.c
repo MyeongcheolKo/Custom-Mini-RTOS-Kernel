@@ -20,8 +20,16 @@ int main(void)
 	GPIO_led.GPIO_config.GPIO_pin_num = GPIO_PIN_NO_5;
 	GPIO_led.GPIO_config.GPIO_pin_mode = GPIO_MODE_OUT;
 	GPIO_led.GPIO_config.GPIO_pin_speed = GPIO_OUT_SPEED_FAST;
+
+	//push-pull with no pull up or pull down
 	GPIO_led.GPIO_config.GPIO_pin_out_type = GPIO_OUT_TYPE_PP;
 	GPIO_led.GPIO_config.GPIO_pin_pupd = GPIO_PIN_NO_PUPD;
+
+	//open drain with pull up, led should be toggling but with very very small intensity
+	//need external pull up resistor for the LED to light up with normal intensity
+	//for example, connect PA5 to 5V with an external resistor
+//	GPIO_led.GPIO_config.GPIO_pin_out_type = GPIO_OUT_TYPE_OD;
+//	GPIO_led.GPIO_config.GPIO_pin_pupd = GPIO_PIN_PU;
 
 	GPIO_clock_control(GPIO_led.p_GPIOx, ENABLE);
 	GPIO_init(&GPIO_led);

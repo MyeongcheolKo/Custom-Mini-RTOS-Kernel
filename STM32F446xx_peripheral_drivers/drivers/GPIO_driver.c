@@ -107,8 +107,36 @@ void GPIO_init(GPIO_Handle_t *p_GPIO_Handle)
 		temp = 0;
 	}else{
 		//interrupt modes
+		if(mode == GPIO_MODE_IT_FT)
+		{
+			//configure the FTSR
+			EXTI->FTSR |= (1 << pin);
+			//clear the corresponding RTSR bit
+			EXTI->RTSR &= ~(1 << pin);
+		}else if(mode == GPIO_MODE_IT_RT)
+		{
+			//configure the RTSR
+			EXTI->RTSR |= (1 << pin);
+			//clear the corresponding RTSR bit
+			EXTI->FTSR &= ~(1 << pin);
+		}else if (mode == GPIO_MODE_IT_RFT)
+		{
+			//configure both FTSR and RTSR
+			EXTI->RTSR |= (1 << pin);
+			EXTI->FTSR |= (1 << pin);
+		}
+
+		//configure the GPIO port selection in SYSCFG_EXTICRx
+		uint8_t temp1 = pin / 4;
+		uint8_t temp2 = pin % 4;
+		uint8_t port_code = GPIO_BASEADDR_TO_CODE(p_GPIO_Handle->p_GPIOx);
+		SYSCFG_PCLK_EN();
+		SYSCFG->EXTICR[temp1] |= ( port_code<< (4 * temp2) );
+		//enable the EXTI interrupt using IMR
+		EXTI->IMR |= (1 << pin);
 	}
-	if(mode == GPIO_MODE_OUT)
+
+	if(mode == GPIO_MODE_OUT || mode == GPIO_MODE_ALTFUNC)
 	{
 		//config output type
 		temp = p_GPIO_Handle->p_GPIOx->OTYPER;
@@ -142,7 +170,6 @@ void GPIO_init(GPIO_Handle_t *p_GPIO_Handle)
 		temp |= (p_GPIO_Handle->GPIO_config.GPIO_pin_alt_fcn_mode << (4 * temp2) );
 		p_GPIO_Handle->p_GPIOx->AFR[temp1] = temp;
 		temp = 0;
-
 	}
 }
 /*
@@ -265,13 +292,89 @@ void GPIO_toggle_output_pin(GPIO_reg_t *p_GPIOx, uint8_t pin_num)
 	p_GPIOx->ODR ^= (1 << pin_num);
 }
 
-//IQR configuration and handling
-void GPIO_IRQ_config(uint8_t IRQ_num, uint8_t IRQ_priority, uint8_t enable)
+/*
+ * @fcn:			GPIO_IRQ_config
+ *
+ * @brief:			This function enable/disable the GPIO pin as given
+ *
+ * @param:			the IRQ number to enable/disable
+ * @param:			ENABLE or DISABLE the IRQ
+ *
+ * @return: 		none
+ */
+void GPIO_IRQ_config(uint8_t IRQ_num, uint8_t enable)
 {
+	//enable the IRQ
+	if(enable == ENABLE)
+	{
+		if(IRQ_num < 32)
+		{
+			//enable ISER0
+			*NVIC_ISER0 |= (1 << IRQ_num);
+		}else if(IRQ_num >= 32 && IRQ_num < 64)
+		{
+			//enable ISER1
+			*NVIC_ISER1 |= (1 << (IRQ_num % 32));
+		}else if(IRQ_num >= 64 && IRQ_num < 96){
+			//enable ISER2
+			*NVIC_ISER2 |= (1 << (IRQ_num % 64));
+		}
+		else if (IRQ_num >= 96 && IRQ_num < 128)
+		{
+			//enable ISER3
+			*NVIC_ISER3 |= (1 << (IRQ_num % 96));
+		}
+	}else{ //disable the IRQ
+		if(IRQ_num < 32)
+		{
+			//enable ICER0
+			*NVIC_ICER0 |= (1 << IRQ_num);
+		}else if(IRQ_num >= 32 && IRQ_num < 64)
+		{
+			//enable ICER1
+			*NVIC_ICER1 |= (1 << (IRQ_num % 32));
+		}else if(IRQ_num >= 64 && IRQ_num < 96){
+			//enable ICER2
+			*NVIC_ICER2 |= (1 << (IRQ_num % 64));
+		}
+		else if (IRQ_num >= 96 && IRQ_num < 128)
+		{
+			//enable ICER3
+			*NVIC_ICER3 |= (1 << (IRQ_num % 96));
+		}
+	}
 
 }
+
+/*
+ * @fcn:			GPIO_IRQ_config
+ *
+ * @brief:			This function enable/disable the GPIO pin as given
+ *
+ * @param:			base address of GPIO port registers
+ * @param:			pin number to toggle
+ *
+ * @return: 		none
+ */
+void GPIO_set_priority(uint8_t IRQ_num, uint8_t IRQ_priority)
+{
+	//set priority
+	uint8_t iprx = IRQ_num / 4;						//which IRQ register, each IPR register only contain 4 interrupts (1 byte apart)
+	uint8_t iprx_section = IRQ_num % 4;				//which interrupt(byte) within the IPR register
+	uint8_t shift_amount = (8 * iprx_section) + 4; 	//add 4 because the upper 4 bits are the preemptive priority and the lower 4 are the subpriority
+
+	*(NVIC_IPR_BASEADDR + (4 * iprx)) |= (IRQ_priority << shift_amount);
+
+}
+
+
 void GPIO_IRQ_handler(uint8_t pin_num)
 {
-
+	//check if corresponding pending register bit is set
+	if(EXTI->PR & (1 << pin_num))
+	{
+		//clear the pending bit in the pending register(set to 1)
+		EXTI->PR |= (1 << pin_num);
+	}
 }
 
