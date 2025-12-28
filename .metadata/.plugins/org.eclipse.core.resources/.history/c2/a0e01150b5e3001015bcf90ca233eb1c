@@ -4,7 +4,7 @@ CFLAGS = -c -mcpu=$(MACH) -mthumb -mfloat-abi=soft -std=gnu11 -Wall -O0 -g -Idri
 LDFLAGS = -mcpu=$(MACH) -mthumb -mfloat-abi=soft --specs=nano.specs -T linker_script.ld -Wl,-Map=final.map
 LDFLAGS_SH = -mcpu=$(MACH) -mthumb -mfloat-abi=soft --specs=rdimon.specs -T linker_script.ld -Wl,-Map=final.map
 
-all:syscalls.o sysmem.o startup.o GPIO_driver.o interrupt_button_LED.o final.elf
+all:syscalls.o sysmem.o startup.o GPIO_driver.o external_button_LED.o final.elf
 
 semi:sysmem.o startup.o final_sh.elf
 
@@ -26,13 +26,11 @@ GPIO_driver.o:drivers/GPIO_driver.c
 #button_LED.o:sample_applications/button_LED.c
 #	$(CC) $(CFLAGS) $^ -o $@
 	
-#external_button_LED.o:sample_applications/external_button_LED.c
-#	$(CC) $(CFLAGS) $^ -o $@
-
-interrupt_button_LED.o:sample_applications/interrupt_button_LED.c
+external_button_LED.o:sample_applications/external_button_LED.c
 	$(CC) $(CFLAGS) $^ -o $@
+
 	
-final.elf:startup.o syscalls.o sysmem.o GPIO_driver.o interrupt_button_LED.o
+final.elf:startup.o syscalls.o sysmem.o GPIO_driver.o external_button_LED.o
 	$(CC) $(LDFLAGS) $^ -o $@
 
 final_sh.elf:startup.o sysmem.o

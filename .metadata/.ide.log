@@ -1,55 +1,98 @@
-2025-12-27 16:37:18,887 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] org.eclipse.core.internal.resources.ResourceException(/STM32F446xx_peripheral_drivers/Debug.launch)[275]: java.lang.Exception: A resource exists with a different case: '/STM32F446xx_peripheral_drivers/Debug.launch'.
-2025-12-27 16:37:18,891 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.core.internal.resources.ResourceException.provideStackTrace(ResourceException.java:42)
-2025-12-27 16:37:18,891 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.core.internal.resources.ResourceException.<init>(ResourceException.java:38)
-2025-12-27 16:37:18,892 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.core.internal.resources.Resource.checkDoesNotExist(Resource.java:352)
-2025-12-27 16:37:18,892 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.core.internal.resources.Resource.checkDoesNotExist(Resource.java:330)
-2025-12-27 16:37:18,892 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.core.internal.resources.File.checkCreatable(File.java:207)
-2025-12-27 16:37:18,892 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.core.internal.resources.File.create(File.java:130)
-2025-12-27 16:37:18,892 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.core.internal.resources.File.create(File.java:165)
-2025-12-27 16:37:18,892 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.debug.internal.core.LaunchConfigurationWorkingCopy.writeNewFile(LaunchConfigurationWorkingCopy.java:357)
-2025-12-27 16:37:18,893 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.debug.internal.core.LaunchConfigurationWorkingCopy.doSave0(LaunchConfigurationWorkingCopy.java:259)
-2025-12-27 16:37:18,894 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.core.internal.resources.Workspace.run(Workspace.java:2451)
-2025-12-27 16:37:18,895 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.core.internal.resources.Workspace.run(Workspace.java:2476)
-2025-12-27 16:37:18,895 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.debug.internal.core.LaunchConfigurationWorkingCopy.doSave(LaunchConfigurationWorkingCopy.java:226)
-2025-12-27 16:37:18,896 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.debug.internal.core.LaunchConfigurationWorkingCopy.doSave(LaunchConfigurationWorkingCopy.java:187)
-2025-12-27 16:37:18,896 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at com.st.stm32cube.ide.mcu.debug.launch.ui.MCUDebugLaunchShortcut.createConfiguration(MCUDebugLaunchShortcut.java:94)
-2025-12-27 16:37:18,896 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at com.st.stm32cube.ide.mcu.debug.launch.oss.ui.DebugLaunchShortcut.launch(DebugLaunchShortcut.java:63)
-2025-12-27 16:37:18,896 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at com.st.stm32cube.ide.mcu.debug.launch.oss.ui.DebugLaunchShortcut.searchAndLaunch(DebugLaunchShortcut.java:174)
-2025-12-27 16:37:18,896 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at com.st.stm32cube.ide.mcu.debug.launch.ui.MCUDebugLaunchShortcut.launch(MCUDebugLaunchShortcut.java:115)
-2025-12-27 16:37:18,896 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.debug.internal.ui.launchConfigurations.LaunchShortcutExtension.launch(LaunchShortcutExtension.java:423)
-2025-12-27 16:37:18,896 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.debug.internal.ui.contextlaunching.ContextRunner.launchShortcut(ContextRunner.java:267)
-2025-12-27 16:37:18,896 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.debug.internal.ui.contextlaunching.ContextRunner.selectAndLaunch(ContextRunner.java:188)
-2025-12-27 16:37:18,896 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.debug.internal.ui.contextlaunching.ContextRunner.launch(ContextRunner.java:100)
-2025-12-27 16:37:18,896 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.debug.ui.actions.AbstractLaunchToolbarAction.runInternal(AbstractLaunchToolbarAction.java:90)
-2025-12-27 16:37:18,896 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.debug.ui.actions.AbstractLaunchHistoryAction.runWithEvent(AbstractLaunchHistoryAction.java:420)
-2025-12-27 16:37:18,896 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.ui.internal.PluginAction.runWithEvent(PluginAction.java:229)
-2025-12-27 16:37:18,896 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.ui.internal.WWinPluginAction.runWithEvent(WWinPluginAction.java:218)
-2025-12-27 16:37:18,896 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.jface.action.ActionContributionItem.handleWidgetSelection(ActionContributionItem.java:581)
-2025-12-27 16:37:18,896 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.jface.action.ActionContributionItem.lambda$5(ActionContributionItem.java:454)
-2025-12-27 16:37:18,897 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.swt.widgets.EventTable.sendEvent(EventTable.java:91)
-2025-12-27 16:37:18,897 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.swt.widgets.Display.sendEvent(Display.java:4660)
-2025-12-27 16:37:18,897 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.swt.widgets.Widget.sendEvent(Widget.java:1622)
-2025-12-27 16:37:18,898 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.swt.widgets.Widget.sendEvent(Widget.java:1645)
-2025-12-27 16:37:18,898 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.swt.widgets.Widget.sendEvent(Widget.java:1630)
-2025-12-27 16:37:18,898 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.swt.widgets.Widget.notifyListeners(Widget.java:1392)
-2025-12-27 16:37:18,898 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.swt.widgets.Display.runDeferredEvents(Display.java:4427)
-2025-12-27 16:37:18,898 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.swt.widgets.Display.readAndDispatch(Display.java:4003)
-2025-12-27 16:37:18,898 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.e4.ui.internal.workbench.swt.PartRenderingEngine$5.run(PartRenderingEngine.java:1151)
-2025-12-27 16:37:18,898 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.core.databinding.observable.Realm.runWithDefault(Realm.java:339)
-2025-12-27 16:37:18,898 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.e4.ui.internal.workbench.swt.PartRenderingEngine.run(PartRenderingEngine.java:1042)
-2025-12-27 16:37:18,898 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.e4.ui.internal.workbench.E4Workbench.createAndRunUI(E4Workbench.java:153)
-2025-12-27 16:37:18,898 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.ui.internal.Workbench.lambda$3(Workbench.java:639)
-2025-12-27 16:37:18,898 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.core.databinding.observable.Realm.runWithDefault(Realm.java:339)
-2025-12-27 16:37:18,898 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.ui.internal.Workbench.createAndRunWorkbench(Workbench.java:546)
-2025-12-27 16:37:18,899 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.ui.PlatformUI.createAndRunWorkbench(PlatformUI.java:173)
-2025-12-27 16:37:18,899 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.ui.internal.ide.application.IDEApplication.start(IDEApplication.java:152)
-2025-12-27 16:37:18,899 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.equinox.internal.app.EclipseAppHandle.run(EclipseAppHandle.java:208)
-2025-12-27 16:37:18,899 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.runApplication(EclipseAppLauncher.java:143)
-2025-12-27 16:37:18,899 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.start(EclipseAppLauncher.java:109)
-2025-12-27 16:37:18,899 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:439)
-2025-12-27 16:37:18,899 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:271)
-2025-12-27 16:37:18,899 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
-2025-12-27 16:37:18,899 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
-2025-12-27 16:37:18,899 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.equinox.launcher.Main.invokeFramework(Main.java:668)
-2025-12-27 16:37:18,899 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.equinox.launcher.Main.basicRun(Main.java:605)
-2025-12-27 16:37:18,899 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] 	at org.eclipse.equinox.launcher.Main.run(Main.java:1481)
+2025-12-28 01:50:41,929 [INFO] WebApp:194 - Connection lost
+2025-12-28 01:50:42,689 [INFO] WebApp:191 - Connection restablished
+2025-12-28 02:01:46,960 [INFO] WebApp:194 - Connection lost
+2025-12-28 02:01:47,475 [INFO] WebApp:191 - Connection restablished
+2025-12-28 02:19:05,932 [INFO] WebApp:194 - Connection lost
+2025-12-28 02:19:06,643 [INFO] WebApp:191 - Connection restablished
+2025-12-28 02:37:55,959 [INFO] WebApp:194 - Connection lost
+2025-12-28 02:37:56,611 [INFO] WebApp:191 - Connection restablished
+2025-12-28 02:53:51,781 [INFO] WebApp:194 - Connection lost
+2025-12-28 02:53:52,429 [INFO] WebApp:191 - Connection restablished
+2025-12-28 03:11:28,782 [INFO] WebApp:194 - Connection lost
+2025-12-28 03:11:29,380 [INFO] WebApp:191 - Connection restablished
+2025-12-28 03:27:15,788 [INFO] WebApp:194 - Connection lost
+2025-12-28 03:27:16,506 [INFO] WebApp:191 - Connection restablished
+2025-12-28 03:43:04,872 [INFO] WebApp:194 - Connection lost
+2025-12-28 03:43:05,523 [INFO] WebApp:191 - Connection restablished
+2025-12-28 03:50:39,396 [INFO] WebApp:194 - Connection lost
+2025-12-28 03:50:39,867 [INFO] WebApp:191 - Connection restablished
+2025-12-28 03:54:36,639 [INFO] WebApp:194 - Connection lost
+2025-12-28 03:54:37,186 [INFO] WebApp:191 - Connection restablished
+2025-12-28 03:54:37,777 [INFO] WebApp:194 - Connection lost
+2025-12-28 03:54:39,005 [INFO] WebApp:191 - Connection restablished
+2025-12-28 04:10:41,894 [INFO] WebApp:194 - Connection lost
+2025-12-28 04:10:42,532 [INFO] WebApp:191 - Connection restablished
+2025-12-28 04:31:03,803 [INFO] WebApp:194 - Connection lost
+2025-12-28 04:31:04,478 [INFO] WebApp:191 - Connection restablished
+2025-12-28 04:46:54,713 [INFO] WebApp:194 - Connection lost
+2025-12-28 04:46:55,347 [INFO] WebApp:191 - Connection restablished
+2025-12-28 04:55:36,825 [INFO] WebApp:194 - Connection lost
+2025-12-28 04:55:37,441 [INFO] WebApp:191 - Connection restablished
+2025-12-28 05:13:08,719 [INFO] WebApp:194 - Connection lost
+2025-12-28 05:13:09,349 [INFO] WebApp:191 - Connection restablished
+2025-12-28 05:30:07,887 [INFO] WebApp:194 - Connection lost
+2025-12-28 05:30:08,577 [INFO] WebApp:191 - Connection restablished
+2025-12-28 05:46:28,719 [INFO] WebApp:194 - Connection lost
+2025-12-28 05:46:29,410 [INFO] WebApp:191 - Connection restablished
+2025-12-28 05:56:36,873 [INFO] WebApp:194 - Connection lost
+2025-12-28 05:56:37,485 [INFO] WebApp:191 - Connection restablished
+2025-12-28 06:12:23,967 [INFO] WebApp:194 - Connection lost
+2025-12-28 06:12:24,637 [INFO] WebApp:191 - Connection restablished
+2025-12-28 06:28:12,664 [INFO] WebApp:194 - Connection lost
+2025-12-28 06:28:13,352 [INFO] WebApp:191 - Connection restablished
+2025-12-28 06:44:48,060 [INFO] WebApp:194 - Connection lost
+2025-12-28 06:44:48,770 [INFO] WebApp:191 - Connection restablished
+2025-12-28 06:57:36,703 [INFO] WebApp:194 - Connection lost
+2025-12-28 06:57:37,280 [INFO] WebApp:191 - Connection restablished
+2025-12-28 07:14:43,684 [INFO] WebApp:194 - Connection lost
+2025-12-28 07:14:44,342 [INFO] WebApp:191 - Connection restablished
+2025-12-28 07:30:49,805 [INFO] WebApp:194 - Connection lost
+2025-12-28 07:30:50,505 [INFO] WebApp:191 - Connection restablished
+2025-12-28 07:48:15,636 [INFO] WebApp:194 - Connection lost
+2025-12-28 07:48:16,754 [INFO] WebApp:191 - Connection restablished
+2025-12-28 07:58:36,674 [INFO] WebApp:194 - Connection lost
+2025-12-28 07:58:37,286 [INFO] WebApp:191 - Connection restablished
+2025-12-28 08:15:48,720 [INFO] WebApp:194 - Connection lost
+2025-12-28 08:15:49,385 [INFO] WebApp:191 - Connection restablished
+2025-12-28 08:31:59,879 [INFO] WebApp:194 - Connection lost
+2025-12-28 08:32:00,480 [INFO] WebApp:191 - Connection restablished
+2025-12-28 08:49:14,721 [INFO] WebApp:194 - Connection lost
+2025-12-28 08:49:15,335 [INFO] WebApp:191 - Connection restablished
+2025-12-28 08:59:36,808 [INFO] WebApp:194 - Connection lost
+2025-12-28 08:59:37,453 [INFO] WebApp:191 - Connection restablished
+2025-12-28 09:15:34,643 [INFO] WebApp:194 - Connection lost
+2025-12-28 09:15:35,243 [INFO] WebApp:191 - Connection restablished
+2025-12-28 09:31:27,787 [INFO] WebApp:194 - Connection lost
+2025-12-28 09:31:28,567 [INFO] WebApp:191 - Connection restablished
+2025-12-28 09:34:53,573 [INFO] WebApp:194 - Connection lost
+2025-12-28 09:34:54,181 [INFO] WebApp:191 - Connection restablished
+2025-12-28 09:50:38,646 [INFO] WebApp:194 - Connection lost
+2025-12-28 09:50:39,270 [INFO] WebApp:191 - Connection restablished
+2025-12-28 10:00:36,921 [INFO] WebApp:194 - Connection lost
+2025-12-28 10:00:37,491 [INFO] WebApp:191 - Connection restablished
+2025-12-28 10:16:21,699 [INFO] WebApp:194 - Connection lost
+2025-12-28 10:16:22,187 [INFO] WebApp:191 - Connection restablished
+2025-12-28 10:32:06,730 [INFO] WebApp:194 - Connection lost
+2025-12-28 10:32:07,664 [INFO] WebApp:191 - Connection restablished
+2025-12-28 10:47:51,699 [INFO] WebApp:194 - Connection lost
+2025-12-28 10:47:52,351 [INFO] WebApp:191 - Connection restablished
+2025-12-28 11:01:36,662 [INFO] WebApp:194 - Connection lost
+2025-12-28 11:01:37,396 [INFO] WebApp:191 - Connection restablished
+2025-12-28 11:18:59,609 [INFO] WebApp:194 - Connection lost
+2025-12-28 11:19:00,217 [INFO] WebApp:191 - Connection restablished
+2025-12-28 11:36:42,913 [INFO] WebApp:194 - Connection lost
+2025-12-28 11:36:43,579 [INFO] WebApp:191 - Connection restablished
+2025-12-28 11:51:59,030 [INFO] WebApp:194 - Connection lost
+2025-12-28 11:51:59,989 [INFO] WebApp:191 - Connection restablished
+2025-12-28 14:20:59,358 [INFO] WebApp:194 - Connection lost
+2025-12-28 14:21:00,316 [INFO] WebApp:191 - Connection restablished
+2025-12-28 14:38:17,229 [INFO] WebApp:194 - Connection lost
+2025-12-28 14:38:17,992 [INFO] WebApp:191 - Connection restablished
+2025-12-28 14:50:01,675 [INFO] WebApp:194 - Connection lost
+2025-12-28 14:50:02,388 [INFO] WebApp:191 - Connection restablished
+2025-12-28 14:53:18,838 [INFO] WebApp:194 - Connection lost
+2025-12-28 14:53:19,830 [INFO] WebApp:191 - Connection restablished
+2025-12-28 18:31:10,009 [INFO] WebApp:194 - Connection lost
+2025-12-28 18:31:11,009 [INFO] WebApp:191 - Connection restablished
+2025-12-28 18:37:33,109 [INFO] WebApp:194 - Connection lost
+2025-12-28 18:37:34,493 [INFO] WebApp:191 - Connection restablished

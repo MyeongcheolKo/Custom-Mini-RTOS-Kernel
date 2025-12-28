@@ -106,15 +106,7 @@ void GPIO_init(GPIO_Handle_t *p_GPIO_Handle)
 		p_GPIO_Handle->p_GPIOx->MODER = temp; 	//right back to the register
 		temp = 0;
 	}else{
-		// Interrupt modes
-
-		//configure as input first
-		temp = p_GPIO_Handle->p_GPIOx->MODER;
-		temp &= ~(0b11 << (2 * pin));  // 00 = input
-		p_GPIO_Handle->p_GPIOx->MODER = temp;
-		temp = 0;
-
-		//configure edge trigger
+		//interrupt modes
 		if(mode == GPIO_MODE_IT_FT)
 		{
 			//configure the FTSR
@@ -139,8 +131,7 @@ void GPIO_init(GPIO_Handle_t *p_GPIO_Handle)
 		uint8_t temp2 = pin % 4;
 		uint8_t port_code = GPIO_BASEADDR_TO_CODE(p_GPIO_Handle->p_GPIOx);
 		SYSCFG_PCLK_EN();
-		SYSCFG->EXTICR[temp1] |= ( port_code<< (4 * temp2) );	//for example, set EXTI3 port to A port b/c using PA3 pin
-
+		SYSCFG->EXTICR[temp1] |= ( port_code<< (4 * temp2) );
 		//enable the EXTI interrupt using IMR
 		EXTI->IMR |= (1 << pin);
 	}

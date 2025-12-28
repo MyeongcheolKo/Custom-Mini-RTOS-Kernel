@@ -106,15 +106,7 @@ void GPIO_init(GPIO_Handle_t *p_GPIO_Handle)
 		p_GPIO_Handle->p_GPIOx->MODER = temp; 	//right back to the register
 		temp = 0;
 	}else{
-		// Interrupt modes
-
-		//configure as input first
-		temp = p_GPIO_Handle->p_GPIOx->MODER;
-		temp &= ~(0b11 << (2 * pin));  // 00 = input
-		p_GPIO_Handle->p_GPIOx->MODER = temp;
-		temp = 0;
-
-		//configure edge trigger
+		//interrupt modes
 		if(mode == GPIO_MODE_IT_FT)
 		{
 			//configure the FTSR
@@ -139,8 +131,7 @@ void GPIO_init(GPIO_Handle_t *p_GPIO_Handle)
 		uint8_t temp2 = pin % 4;
 		uint8_t port_code = GPIO_BASEADDR_TO_CODE(p_GPIO_Handle->p_GPIOx);
 		SYSCFG_PCLK_EN();
-		SYSCFG->EXTICR[temp1] |= ( port_code<< (4 * temp2) );	//for example, set EXTI3 port to A port b/c using PA3 pin
-
+		SYSCFG->EXTICR[temp1] |= ( port_code<< (4 * temp2) );
 		//enable the EXTI interrupt using IMR
 		EXTI->IMR |= (1 << pin);
 	}
@@ -372,27 +363,17 @@ void GPIO_set_priority(uint8_t IRQ_num, uint8_t IRQ_priority)
 	uint8_t iprx_section = IRQ_num % 4;				//which interrupt(byte) within the IPR register
 	uint8_t shift_amount = (8 * iprx_section) + 4; 	//add 4 because the upper 4 bits are the preemptive priority and the lower 4 are the subpriority
 
-	*(NVIC_IPR_BASEADDR + iprx) |= (IRQ_priority << shift_amount); //NVIC_IPR_BASEADDR is uin32_t pointer so adding the iprx will be 4 bytes apart?
+	*(NVIC_IPR_BASEADDR + (4 * iprx)) |= (IRQ_priority << shift_amount);
 
 }
 
-/*
- * @fcn:			GPIO_IRQ_handler
- *
- * @brief:			This function clears the pending interrupt of the given pin
- *
- * @param:			pin number to clear interrupt
- *
- * @return: 		none
- *
- * @note:			call in the EXTI handlers to clear the pending bit
- */
+
 void GPIO_IRQ_handler(uint8_t pin_num)
 {
-	//check if corresponding bit in pending register is set
+	//check if corresponding pending register bit is set
 	if(EXTI->PR & (1 << pin_num))
 	{
-		//clear the pending bit (write 1 to clear)
+		//clear the pending bit in the pending register(set to 1)
 		EXTI->PR |= (1 << pin_num);
 	}
 }
