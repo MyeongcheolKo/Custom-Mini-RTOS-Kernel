@@ -90,7 +90,7 @@
  * matches the offsets of the registers so we can access the registers access via the struct, like GPIOA->MODER = ...
  */
 
-//GPIO port registers
+//GPIO register structure
 typedef struct{
 	volatile uint32_t MODER; 	//GPIO port mode register
 	volatile uint32_t OTYPER; 	//GPIO port output type register
@@ -112,6 +112,24 @@ typedef struct{
 #define GPIOF 	((GPIO_reg_t*)GPIOF_BASEADDR)
 #define GPIOG 	((GPIO_reg_t*)GPIOG_BASEADDR)
 #define GPIOH 	((GPIO_reg_t*)GPIOH_BASEADDR)
+
+//SPI register structure
+typedef struct{
+	volatile uint32_t 	CR1;		//SPI control register 1
+	volatile uint32_t 	CR2;		//SPI control register 2
+	volatile uint32_t 	SR;			//SPI status register
+	volatile uint32_t	DR;			//SPI data register
+	volatile uint32_t	CRCPR;		//SPI CRC polynomial register
+	volatile uint32_t	RXCRCR;		//SPI RX CRC register
+	volatile uint32_t	TXCRCR;		//SPI TX CRC register
+	volatile uint32_t	I2SCFGR;	//SPI_I2S configuration register
+	volatile uint32_t	I2SPR;		//SPI_I2S prescaler register
+}SPI_reg_t;
+
+#define SPI1	((SPI_reg_t*)SPI1_BASEADDR)
+#define SPI2	((SPI_reg_t*)SPI2_BASEADDR)
+#define SPI3	((SPI_reg_t*)SPI3_BASEADDR)
+#define SPI4	((SPI_reg_t*)SPI4_BASEADDR)
 
 //RCC register structure
 typedef struct{
@@ -256,8 +274,7 @@ typedef struct{
 /*
  * reset GPIO peripherals registers
  */
-//have to set the register bit back to 0 after setting it to 1 for reset so it is releases for later use
-//otherwise it will be held at reset
+//note: have to set the reset registers back to 0 after setting it to 1 so it is released for later use, otherwise it will be held at reset
 #define GPIOA_REG_RESET()		do{ RCC->AHB1RSTR |= (1 << 0); RCC->AHB1RSTR &= ~(1 << 0);}while(0)
 #define GPIOB_REG_RESET()		do{ RCC->AHB1RSTR |= (1 << 1); RCC->AHB1RSTR &= ~(1 << 1);}while(0)
 #define GPIOC_REG_RESET()		do{ RCC->AHB1RSTR |= (1 << 2); RCC->AHB1RSTR &= ~(1 << 2);}while(0)
@@ -288,6 +305,45 @@ typedef struct{
 #define IRQ_NO_EXTI4    	10
 #define IRQ_NO_EXTI9_5  	23
 #define IRQ_NO_EXTI15_10    40
+
+/*
+ * bit position macros for SPI registers
+ */
+//SPI_CR1
+#define SPI_CR1_CPHA 		0
+#define SPI_CR1_CPOL 		1
+#define SPI_CR1_MSTR 		2
+#define SPI_CR1_BR 			3
+#define SPI_CR1_SPE 		6
+#define SPI_CR1_LSBFIRST 	7
+#define SPI_CR1_SSI 		8
+#define SPI_CR1_SSM			9
+#define SPI_CR1_RXONLY		10
+#define SPI_CR1_DFF			11
+#define SPI_CR1_CRCNEXT		12
+#define SPI_CR1_CRCEN		13
+#define SPI_CR1_BIDIOE		14
+#define SPI_CR1_BIDIMODE	15
+//SPICR2
+#define SPI_CR2_RXDMAEN		0
+#define SPI_CR2_TXDMAEN		1
+#define SPI_CR2_SSOE		2
+#define SPI_CR2_FRF			4
+#define SPI_CR2_ERRIE		5
+#define SPI_CR2_RXNEIE		6
+#define SPI_CR2_TXEIE		7
+
+//SPI_SR
+#define SPI_SR_RXNE			0
+#define SPI_SR_TXE			1
+#define SPI_SR_CHSIDE		2
+#define SPI_SR_UDR			3
+#define SPI_SR_CRCERR		4
+#define SPI_SR_MODF			5
+#define SPI_SR_OVR			6
+#define SPI_SR_BSY			7
+#define SPI_SR_FRE			8
+
 
 
 //some generic macros

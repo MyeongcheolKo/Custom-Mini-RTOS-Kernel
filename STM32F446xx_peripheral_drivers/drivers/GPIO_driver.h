@@ -95,16 +95,21 @@ typedef struct{
 //clock setup
 void GPIO_clock_control(GPIO_reg_t *p_GPIOx, uint8_t enable);
 
+
 //initialize and diinitialize
 void GPIO_init(GPIO_Handle_t *p_GPIO_Handle);
 void GPIO_deinit(GPIO_reg_t *p_GPIOx);
 
+
+
 //read and write
 uint8_t GPIO_read_input_pin(GPIO_reg_t *p_GPIOx, uint8_t pin_num);
-uint16_t GPIO_read_input_port(GPIO_reg_t *p_GPIOx);
+uint16_t GPIO_read_input_port(GPIO_reg_t *p_GPIOx);\
+
 void GPIO_write_output_pin(GPIO_reg_t *p_GPIOx, uint8_t pin_num, uint8_t val);
 void GPIO_write_output_port(GPIO_reg_t *p_GPIOx, uint16_t val);
 void GPIO_toggle_output_pin(GPIO_reg_t *p_GPIOx, uint8_t pin_num);
+
 
 //IQR configuration and handling
 void GPIO_IRQ_config(uint8_t IRQ_num, uint8_t enable);

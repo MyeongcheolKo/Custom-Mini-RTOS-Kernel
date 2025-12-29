@@ -88,12 +88,16 @@ void GPIO_clock_control(GPIO_reg_t *p_GPIOx, uint8_t enable)
  *
  * @brief:			This function initialize the given GPIO port
  *
- * @param:			base address of GPIO peripheral
+ * @param:			address of GPIO Handle
  *
  * @return: 		none
+ *
+ * @note: 			this function enables the peripheral clock
  */
 void GPIO_init(GPIO_Handle_t *p_GPIO_Handle)
 {
+	//enable the peripheral clock
+	GPIO_clock_control(p_GPIO_Handle->p_GPIOx, ENABLE);
 	uint32_t temp;
 	uint8_t mode = p_GPIO_Handle->GPIO_config.GPIO_pin_mode;
 	uint8_t pin = p_GPIO_Handle->GPIO_config.GPIO_pin_num;

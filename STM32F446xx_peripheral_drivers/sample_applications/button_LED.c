@@ -28,15 +28,13 @@ int main(void)
 	GPIO_led.GPIO_config.GPIO_pin_speed = GPIO_OUT_SPEED_FAST;
 	GPIO_led.GPIO_config.GPIO_pin_out_type = GPIO_OUT_TYPE_PP;
 	GPIO_led.GPIO_config.GPIO_pin_pupd = GPIO_PIN_NO_PUPD;
-	GPIO_clock_control(GPIO_led.p_GPIOx, ENABLE);
 	GPIO_init(&GPIO_led);
 
 	//button configuration
-	GPIO_button.p_GPIOx = GPIOC; 	//LD2 is connected to PC13
+	GPIO_button.p_GPIOx = GPIOC; 	//B1 is connected to PC13
 	GPIO_button.GPIO_config.GPIO_pin_num = GPIO_PIN_NO_13;
 	GPIO_button.GPIO_config.GPIO_pin_mode = GPIO_MODE_IN;
 	GPIO_button.GPIO_config.GPIO_pin_pupd = GPIO_PIN_NO_PUPD;
-	GPIO_clock_control(GPIO_button.p_GPIOx, ENABLE);
 	GPIO_init(&GPIO_button);
 
 

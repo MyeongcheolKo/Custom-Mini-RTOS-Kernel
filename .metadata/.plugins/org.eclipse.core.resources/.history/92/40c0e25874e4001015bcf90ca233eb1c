@@ -1,0 +1,14 @@
+/*
+ * SPI_testing.c
+ *
+ *  Created on: Dec 28, 2025
+ *      Author: krisko
+ */
+#include "SPI_driver.h"
+
+int main(void)
+{
+	return 0;
+}
+
+

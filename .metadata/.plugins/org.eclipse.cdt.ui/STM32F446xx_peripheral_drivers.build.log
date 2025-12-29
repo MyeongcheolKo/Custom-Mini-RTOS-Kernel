@@ -1,6 +1,6 @@
-18:39:35 **** Incremental Build of configuration Default for project STM32F446xx_peripheral_drivers ****
+13:56:28 **** Incremental Build of configuration Default for project STM32F446xx_peripheral_drivers ****
 make all 
 make: Nothing to be done for 'all'.
 
-18:39:35 Build Finished. 0 errors, 0 warnings. (took 240ms)
+13:56:28 Build Finished. 0 errors, 0 warnings. (took 218ms)
 

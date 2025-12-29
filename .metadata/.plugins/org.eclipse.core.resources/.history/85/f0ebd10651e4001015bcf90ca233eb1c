@@ -1,0 +1,162 @@
+/*
+ * SPI_driver.c
+ *
+ *  Created on: Dec 28, 2025
+ *      Author: krisko
+ */
+
+#include "SPI_driver.h"
+
+/*
+ * @fcn:		SPI_clock_control
+ *
+ * #brief:		This function enable/disable the clock for the given SPI port
+ *
+ * @param:		base address of SPI peripheral
+ * @param:		ENABLE or DISABLE
+ *
+ * @return:		none
+ */
+void SPI_clock_control(SPI_config_t *p_SPIx, uint8_t enable)
+{
+	if(enable == ENABLE)
+	{
+		if(p_SPIx == SPIA)
+		{
+			SPIA_PCLK_EN();
+		}
+		else if(p_SPIx == SPIB)
+		{
+			SPIB_PCLK_EN();
+		}
+		else if(p_SPIx == SPIC)
+		{
+			SPIC_PCLK_EN();
+		}
+		else if(p_SPIx == SPID)
+		{
+			SPID_PCLK_EN();
+		}
+		else if(p_SPIx == SPIE)
+		{
+			SPIE_PCLK_EN();
+		}
+		else if(p_SPIx == SPIF)
+		{
+			SPIF_PCLK_EN();
+		}
+		else if(p_SPIx == SPIH)
+		{
+			SPIH_PCLK_EN();
+		}
+	}else
+	{
+		if(p_SPIx == SPIA)
+		{
+			SPIA_PCLK_DI();
+		}
+		else if(p_SPIx == SPIB)
+		{
+			SPIB_PCLK_DI();
+		}
+		else if(p_SPIx == SPIC)
+		{
+			SPIC_PCLK_DI();
+		}
+		else if(p_SPIx == SPID)
+		{
+			SPID_PCLK_DI();
+		}
+		else if(p_SPIx == SPIE)
+		{
+			SPIE_PCLK_DI();
+		}
+		else if(p_SPIx == SPIF)
+		{
+			SPIF_PCLK_DI();
+		}
+		else if(p_SPIx == SPIH)
+		{
+			SPIH_PCLK_DI();
+		}
+	}
+}
+
+
+/*
+ * @fcn:
+ *
+ * #brief:
+ *
+ * @param:
+ *
+ * @return:
+ */
+void SPI_init(SPI_Handle_t *p_SPI_Handle);
+
+/*
+ * @fcn:
+ *
+ * #brief:
+ *
+ * @param:
+ *
+ * @return:
+ */
+void SPI_deinit(SPI_config_t *p_SPIx);
+
+
+/*
+ * @fcn:
+ *
+ * #brief:
+ *
+ * @param:
+ *
+ * @return:
+ */
+void SPI_send(SPI_reg_t *p_SPIx, uint8_t *p_Tx_buffer, uint32_t len);
+
+/*
+ * @fcn:
+ *
+ * #brief:
+ *
+ * @param:
+ *
+ * @return:
+ */
+void SPI_recieve(SPI_reg_t *p_SPIx, uint8_t *p_Rx_buffer, uint32_t len);
+
+/*
+ * @fcn:
+ *
+ * #brief:
+ *
+ * @param:
+ *
+ * @return:
+ */
+void SPI_IRQ_config(uint8_t IRQ_num, uint8_t enable);
+
+/*
+ * @fcn:
+ *
+ * #brief:
+ *
+ * @param:
+ *
+ * @return:
+ */
+void SPI_set_priority(uint8_t IRQ_num, uint8_t IRQ_priority);
+
+/*
+ * @fcn:
+ *
+ * #brief:
+ *
+ * @param:
+ *
+ * @return:
+ */
+void SPI_IRQ_handler(SPI_Handle_t *p_SPI_Handle);
