@@ -272,7 +272,7 @@ typedef struct{
 #define UART5_PCLK_DI()		( RCC->APB1LPENR &= ~(1 << 20) )
 
 /*
- * reset GPIO peripherals registers
+ * macros to reset GPIO peripherals registers
  */
 //note: have to set the reset registers back to 0 after setting it to 1 so it is released for later use, otherwise it will be held at reset
 #define GPIOA_REG_RESET()		do{ RCC->AHB1RSTR |= (1 << 0); RCC->AHB1RSTR &= ~(1 << 0);}while(0)
@@ -283,6 +283,14 @@ typedef struct{
 #define GPIOF_REG_RESET()		do{ RCC->AHB1RSTR |= (1 << 5); RCC->AHB1RSTR &= ~(1 << 5);}while(0)
 #define GPIOG_REG_RESET()		do{ RCC->AHB1RSTR |= (1 << 6); RCC->AHB1RSTR &= ~(1 << 6);}while(0)
 #define GPIOH_REG_RESET()		do{ RCC->AHB1RSTR |= (1 << 7); RCC->AHB1RSTR &= ~(1 << 7);}while(0)
+
+/*
+ * macros to reset SPI peripheral registers
+ */
+#define SPI1_REG_RESET()		do{ RCC->APB2RSTR |= (1 << 12); RCC->APB2RSTR &= ~(1 << 12);}while(0)
+#define SPI2_REG_RESET()		do{ RCC->APB2RSTR |= (1 << 14); RCC->APB2RSTR &= ~(1 << 12);}while(0)
+#define SPI3_REG_RESET()		do{ RCC->APB2RSTR |= (1 << 15); RCC->APB2RSTR &= ~(1 << 12);}while(0)
+#define SPI4_REG_RESET()		do{ RCC->APB2RSTR |= (1 << 13); RCC->APB2RSTR &= ~(1 << 12);}while(0)
 
 /*
  * convert GPIO port to port code
@@ -305,6 +313,11 @@ typedef struct{
 #define IRQ_NO_EXTI4    	10
 #define IRQ_NO_EXTI9_5  	23
 #define IRQ_NO_EXTI15_10    40
+
+#define IRQ_NO_SPI1			35
+#define IRQ_NO_SPI2			36
+#define IRQ_NO_SPI3			51
+#define IRQ_NO_SPI4			84
 
 /*
  * bit position macros for SPI registers
@@ -344,6 +357,12 @@ typedef struct{
 #define SPI_SR_BSY			7
 #define SPI_SR_FRE			8
 
+/*
+ * possible SPI application events
+ */
+#define SPI_EVENT_TX_CMPLT		0
+#define SPI_EVENT_RX_CMPLT		1
+#define SPI_EVENT_OVR_ERR		2
 
 
 //some generic macros
@@ -351,6 +370,7 @@ typedef struct{
 #define DISABLE 	0
 #define SET 		ENABLE
 #define RESET 		DISABLE
+#define NULL		((void*)0)
 //#define GPIO_PIN_SET SET
 //#define GPIO_PIN_RESET RESET
 

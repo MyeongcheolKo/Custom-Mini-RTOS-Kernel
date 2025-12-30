@@ -126,32 +126,27 @@ int main(void)
 	{
 		// Wait for button press
 		while(GPIO_read_input_pin(GPIOC, GPIO_PIN_NO_13) != BUTTON_PRESSED);
-		delay();  // Debounce press
+		delay();  // avoid debounce press
 
-//		// Wait for button release
-//		while(GPIO_read_input_pin(GPIOC, GPIO_PIN_NO_13) == BUTTON_PRESSED);
-//		delay();  // Debounce release
 		//toggle LED
 		GPIO_toggle_output_pin(GPIOA, GPIO_PIN_NO_5);
+
 		//enable SPI2
 		SPI_periph_control(SPI2, ENABLE);
 
 		//first send the length
 		SPI_send(SPI2, &data_len, 1);
 		while( SPI_get_flag_status(SPI2, SPI_SR_BSY) );
-//		delay();
+
 		//send data
 		SPI_send(SPI2, (uint8_t*)send_data, data_len);
+
 		//wait until last byte is transmitted successfully, that is BSY bits turns 0
 		while( SPI_get_flag_status(SPI2, SPI_SR_BSY) );
 
-//		// Clear overrun
-//		uint8_t temp = SPI2->DR;
-//		temp = SPI2->SR;
-//		(void)temp;
-
 		//disable SPI2 so NSS is pulled to 1
 		SPI_periph_control(SPI2, DISABLE);
+
 		//toggle LED
 		GPIO_toggle_output_pin(GPIOA, GPIO_PIN_NO_5);
 		delay();

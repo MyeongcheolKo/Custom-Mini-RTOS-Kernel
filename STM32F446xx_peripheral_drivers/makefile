@@ -4,7 +4,7 @@ CFLAGS = -c -mcpu=$(MACH) -mthumb -mfloat-abi=soft -std=gnu11 -Wall -O0 -g -Idri
 LDFLAGS = -mcpu=$(MACH) -mthumb -mfloat-abi=soft --specs=nano.specs -T linker_script.ld -Wl,-Map=final.map
 LDFLAGS_SH = -mcpu=$(MACH) -mthumb -mfloat-abi=soft --specs=rdimon.specs -T linker_script.ld -Wl,-Map=final.map
 
-all:syscalls.o sysmem.o startup.o GPIO_driver.o SPI_driver.o SPI_transmit_arduino.o final.elf
+all:syscalls.o sysmem.o startup.o GPIO_driver.o SPI_driver.o SPI_send_recieve_arduino.o final.elf
 
 semi:sysmem.o startup.o final_sh.elf
 
@@ -41,7 +41,10 @@ SPI_testing.o:sample_applications/SPI_testing.c
 SPI_transmit_arduino.o:sample_applications/SPI_transmit_arduino.c
 	$(CC) $(CFLAGS) $^ -o $@
 	
-final.elf:startup.o syscalls.o sysmem.o GPIO_driver.o SPI_driver.o SPI_transmit_arduino.o
+SPI_send_recieve_arduino.o:sample_applications/SPI_send_recieve_arduino.c
+	$(CC) $(CFLAGS) $^ -o $@
+	
+final.elf:startup.o syscalls.o sysmem.o GPIO_driver.o SPI_driver.o SPI_send_recieve_arduino.o
 	$(CC) $(LDFLAGS) $^ -o $@
 
 final_sh.elf:startup.o sysmem.o

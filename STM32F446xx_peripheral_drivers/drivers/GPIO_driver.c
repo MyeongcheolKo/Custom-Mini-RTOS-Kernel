@@ -12,8 +12,8 @@
  *
  * @brief:			This function enables or disables the peripheral clock for the given GPIO port
  *
- * @param:			base address of GPIO peripheral
- * @param:			ENABLE or DISABLE macros
+ * @param[in]:		base address of GPIO peripheral
+ * @param[in]:		ENABLE or DISABLE macros
  *
  * @return: 		none
  */
@@ -88,7 +88,7 @@ void GPIO_clock_control(GPIO_reg_t *p_GPIOx, uint8_t enable)
  *
  * @brief:			This function initialize the given GPIO port
  *
- * @param:			address of GPIO Handle
+ * @param[in]:		address of GPIO Handle
  *
  * @return: 		none
  *
@@ -190,7 +190,7 @@ void GPIO_init(GPIO_Handle_t *p_GPIO_Handle)
  *
  * @brief:			This function resets all registers of the given GPIO port
  *
- * @param:			base address of GPIO port registers
+ * @param[in]:		base address of GPIO port registers
  *
  * @return: 		none
  */
@@ -232,8 +232,8 @@ void GPIO_deinit(GPIO_reg_t *p_GPIOx)
  *
  * @brief:			This function reads the input value of the given GPIO pin
  *
- * @param:			base address of GPIO port registers
- * @param:			the specific pin number to read
+ * @param[in]:		base address of GPIO port registers
+ * @param[in]:		the specific pin number to read
  *
  * @return: 		the input value(0 or 1) of the pin
  */
@@ -247,7 +247,7 @@ uint8_t GPIO_read_input_pin(GPIO_reg_t *p_GPIOx, uint8_t pin_num)
  *
  * @brief:			This function reads the input value of the given GPIO port
  *
- * @param:			base address of GPIO port registers
+ * @param[in]:		base address of GPIO port registers
  *
  * @return: 		the input value of the 16 pins of the port
  */
@@ -260,9 +260,9 @@ uint16_t GPIO_read_input_port(GPIO_reg_t *p_GPIOx)
  *
  * @brief:			This function writes the given value to the given GPIO pin
  *
- * @param:			base address of GPIO port registers
- * @param:			pin number to write value to
- * @param:			value to write to the pin
+ * @param[in]:		base address of GPIO port registers
+ * @param[in]:		pin number to write value to
+ * @param[in]:		value to write to the pin
  *
  * @return: 		none
  */
@@ -281,8 +281,8 @@ void GPIO_write_output_pin(GPIO_reg_t *p_GPIOx, uint8_t pin_num, uint8_t val)
  *
  * @brief:			This function writes the given value to the given GPIO port
  *
- * @param:			base address of GPIO port registers
- * @param:			value to write to the port
+ * @param[in]:		base address of GPIO port registers
+ * @param[in]:		value to write to the port
  *
  * @return: 		none
  */
@@ -295,8 +295,8 @@ void GPIO_write_output_port(GPIO_reg_t *p_GPIOx, uint16_t val)
  *
  * @brief:			This function toggles the given GPIO pin
  *
- * @param:			base address of GPIO port registers
- * @param:			pin number to toggle
+ * @param[in]:		base address of GPIO port registers
+ * @param[in]:		pin number to toggle
  *
  * @return: 		none
  */
@@ -308,10 +308,10 @@ void GPIO_toggle_output_pin(GPIO_reg_t *p_GPIOx, uint8_t pin_num)
 /*
  * @fcn:			GPIO_IRQ_config
  *
- * @brief:			This function enable/disable the GPIO pin as given
+ * @brief:			This function enable/disable interrupt for the given peripheral
  *
- * @param:			the IRQ number to enable/disable
- * @param:			ENABLE or DISABLE the IRQ
+ * @param[in]:		the IRQ number to enable/disable
+ * @param[in]:		ENABLE or DISABLE the IRQ
  *
  * @return: 		none
  */
@@ -364,8 +364,8 @@ void GPIO_IRQ_config(uint8_t IRQ_num, uint8_t enable)
  *
  * @brief:			This function enable/disable the GPIO pin as given
  *
- * @param:			base address of GPIO port registers
- * @param:			pin number to toggle
+ * @param[in]:		IRQ number of the peripheral to set priority
+ * @param[in]:		priority value to set the IRQ to
  *
  * @return: 		none
  */
@@ -376,7 +376,7 @@ void GPIO_set_priority(uint8_t IRQ_num, uint8_t IRQ_priority)
 	uint8_t iprx_section = IRQ_num % 4;				//which interrupt(byte) within the IPR register
 	uint8_t shift_amount = (8 * iprx_section) + 4; 	//add 4 because the upper 4 bits are the preemptive priority and the lower 4 are the subpriority
 
-	*(NVIC_IPR_BASEADDR + iprx) |= (IRQ_priority << shift_amount); //NVIC_IPR_BASEADDR is uin32_t pointer so adding the iprx will be 4 bytes apart?
+	*(NVIC_IPR_BASEADDR + iprx) |= (IRQ_priority << shift_amount); //NVIC_IPR_BASEADDR is uin32_t pointer so adding the iprx will be 4 bytes apart
 
 }
 
@@ -385,7 +385,7 @@ void GPIO_set_priority(uint8_t IRQ_num, uint8_t IRQ_priority)
  *
  * @brief:			This function clears the pending interrupt of the given pin
  *
- * @param:			pin number to clear interrupt
+ * @param[in]:		pin number to clear interrupt
  *
  * @return: 		none
  *
