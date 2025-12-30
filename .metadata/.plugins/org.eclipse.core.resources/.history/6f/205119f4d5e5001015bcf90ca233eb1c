@@ -143,6 +143,7 @@ typedef struct{
 	volatile uint32_t CCR;			//I2C clock control register
 	volatile uint32_t TRISE;		//I2C TRISE register
 	volatile uint32_t FLTR;			//I2C FLTR register
+	volatile uint32_t TRISE;		//I2C TRISE register
 }I2C_reg_t;
 
 #define I2C1	((I2C_reg_t*)I2C1_BASEADDR)
@@ -455,6 +456,6 @@ typedef struct{
 #define DISABLE 	0
 #define SET 		ENABLE
 #define RESET 		DISABLE
-//#define NULL		((void*)0)
+#define NULL		((void*)0)
 
 #endif /* DRIVERS_STM32F446XX_H_ */

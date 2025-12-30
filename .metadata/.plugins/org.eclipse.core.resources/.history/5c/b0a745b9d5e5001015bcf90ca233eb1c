@@ -131,24 +131,6 @@ typedef struct{
 #define SPI3	((SPI_reg_t*)SPI3_BASEADDR)
 #define SPI4	((SPI_reg_t*)SPI4_BASEADDR)
 
-//I2C register structure
-typedef struct{
-	volatile uint32_t CR1;			//I2C control register 1
-	volatile uint32_t CR2;			//I2C control register 2
-	volatile uint32_t OAR1;			//2C own address register 1
-	volatile uint32_t OAR2;			//I2C own address register 2
-	volatile uint32_t DR;			//I2C data register
-	volatile uint32_t SR1;			//I2C status register 1
-	volatile uint32_t SR2;			//I2C status register 2
-	volatile uint32_t CCR;			//I2C clock control register
-	volatile uint32_t TRISE;		//I2C TRISE register
-	volatile uint32_t FLTR;			//I2C FLTR register
-}I2C_reg_t;
-
-#define I2C1	((I2C_reg_t*)I2C1_BASEADDR)
-#define I2C2	((I2C_reg_t*)I2C2_BASEADDR)
-#define I2C3	((I2C_reg_t*)I2C3_BASEADDR)
-
 //RCC register structure
 typedef struct{
 	volatile uint32_t CR; 			//RCC clock control register
@@ -311,13 +293,6 @@ typedef struct{
 #define SPI4_REG_RESET()		do{ RCC->APB2RSTR |= (1 << 13); RCC->APB2RSTR &= ~(1 << 12);}while(0)
 
 /*
- * macros to reset I2C peripheral registers
- */
-#define I2C1_REG_RESET()		do{ RCC->APB1RSTR |= (1 << 21); RCC->APB1RSTR &= ~(1 << 21);}while(0)
-#define I2C2_REG_RESET()		do{ RCC->APB1RSTR |= (1 << 22); RCC->APB1RSTR &= ~(1 << 22);}while(0)
-#define I2C3_REG_RESET()		do{ RCC->APB1RSTR |= (1 << 23); RCC->APB1RSTR &= ~(1 << 23);}while(0)
-
-/*
  * convert GPIO port to port code
  */
 #define GPIO_BASEADDR_TO_CODE(x)	((x == GPIOA) ? 0 :\
@@ -362,7 +337,6 @@ typedef struct{
 #define SPI_CR1_CRCEN		13
 #define SPI_CR1_BIDIOE		14
 #define SPI_CR1_BIDIMODE	15
-
 //SPICR2
 #define SPI_CR2_RXDMAEN		0
 #define SPI_CR2_TXDMAEN		1
@@ -384,65 +358,6 @@ typedef struct{
 #define SPI_SR_FRE			8
 
 /*
- * bit position macros for I2C registers
- */
-//CR1
-#define I2C_CR1_PE			0
-#define I2C_CR1_SMBUS		1
-#define I2C_CR1_SMBTYPE		3
-#define I2C_CR1_ENARP		4
-#define I2C_CR1_ENPEC		5
-#define I2C_CR1_ENGC		6
-#define I2C_CR1_NOSTRETCH	7
-#define I2C_CR1_START		8
-#define I2C_CR1_STOP		9
-#define I2C_CR1_ACK			10
-#define I2C_CR1_POS			11
-#define I2C_CR1_PEC			12
-#define I2C_CR1_ALERT		13
-#define I2C_CR1_SWRST		15
-
-//CR2
-#define I2C_CR2_FREQ		0
-#define I2C_CR2_ITEVTEN		9
-#define I2C_CR2_ITBUFEN		10
-#define I2C_CR2_DMAEN		11
-#define I2C_CR2_LAST		12
-
-//SR1
-#define I2C_SR1_SB			0
-#define I2C_SR1_ADDR		1
-#define I2C_SR1_BTF			2
-#define I2C_SR1_ADD10		3
-#define I2C_SR1_STOPF		4
-#define I2C_SR1_RxNE		6
-#define I2C_SR1_TxE			7
-#define I2C_SR1_BERR		8
-#define I2C_SR1_ARLO		9
-#define I2C_SR1_AF			10
-#define I2C_SR1_OVR			11
-#define I2C_SR1_PECERR		12
-#define I2C_SR1_TIMEOUT		14
-#define I2C_SR1_SMBALERT	15
-
-//SR2
-#define I2C_SR2_MSL			0
-#define I2C_SR2_BUSY		1
-#define I2C_SR2_TRA			2
-#define I2C_SR2_GENCALL		4
-#define I2C_SR2_SMBDEFAULT	5
-#define I2C_SR2_SMBHOST		6
-#define I2C_SR2_DUALF		7
-#define I2C_SR2_PEC			8
-
-//CCR
-#define I2C_CCR_CCR			0
-#define I2C_CCR_DUTY		14
-#define I2C_CCR_FX			15
-
-
-
-/*
  * possible SPI application events
  */
 #define SPI_EVENT_TX_CMPLT		0
@@ -455,6 +370,8 @@ typedef struct{
 #define DISABLE 	0
 #define SET 		ENABLE
 #define RESET 		DISABLE
-//#define NULL		((void*)0)
+#define NULL		((void*)0)
+//#define GPIO_PIN_SET SET
+//#define GPIO_PIN_RESET RESET
 
 #endif /* DRIVERS_STM32F446XX_H_ */

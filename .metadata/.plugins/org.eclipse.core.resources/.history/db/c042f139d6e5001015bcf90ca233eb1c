@@ -455,6 +455,6 @@ typedef struct{
 #define DISABLE 	0
 #define SET 		ENABLE
 #define RESET 		DISABLE
-//#define NULL		((void*)0)
+#define NULL		((void*)0)
 
 #endif /* DRIVERS_STM32F446XX_H_ */

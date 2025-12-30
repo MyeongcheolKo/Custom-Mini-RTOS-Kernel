@@ -4,7 +4,7 @@ CFLAGS = -c -mcpu=$(MACH) -mthumb -mfloat-abi=soft -std=gnu11 -Wall -O0 -g -Idri
 LDFLAGS = -mcpu=$(MACH) -mthumb -mfloat-abi=soft --specs=nano.specs -T linker_script.ld -Wl,-Map=final.map
 LDFLAGS_SH = -mcpu=$(MACH) -mthumb -mfloat-abi=soft --specs=rdimon.specs -T linker_script.ld -Wl,-Map=final.map
 
-all:syscalls.o sysmem.o startup.o GPIO_driver.o SPI_driver.o I2C_driver.o SPI_send_recieve_arduino.o final.elf
+all:syscalls.o sysmem.o startup.o GPIO_driver.o SPI_driver.oI2C_driver.o SPI_send_recieve_arduino.o final.elf
 
 semi:sysmem.o startup.o final_sh.elf
 

@@ -614,7 +614,7 @@ void static SPI_OVR_Handle(SPI_Handle_t *p_SPI_Handle)
 		//clear OVR flag
 		SPI_clear_OVR_flag(p_SPI_Handle);
 	}
-	//inform user application, should resend the data and clear OVR flag
+	//inform user application
 	SPI_event_callback(p_SPI_Handle, SPI_EVENT_OVR_ERR);
 }
 
