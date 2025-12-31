@@ -91,7 +91,8 @@
  */
 
 //GPIO register structure
-typedef struct{
+typedef struct
+{
 	volatile uint32_t MODER; 	//GPIO port mode register
 	volatile uint32_t OTYPER; 	//GPIO port output type register
 	volatile uint32_t OSPEEDR; 	//GPIO port output speed register
@@ -114,7 +115,8 @@ typedef struct{
 #define GPIOH 	((GPIO_reg_t*)GPIOH_BASEADDR)
 
 //SPI register structure
-typedef struct{
+typedef struct
+{
 	volatile uint32_t 	CR1;		//SPI control register 1
 	volatile uint32_t 	CR2;		//SPI control register 2
 	volatile uint32_t 	SR;			//SPI status register
@@ -132,7 +134,8 @@ typedef struct{
 #define SPI4	((SPI_reg_t*)SPI4_BASEADDR)
 
 //I2C register structure
-typedef struct{
+typedef struct
+{
 	volatile uint32_t CR1;			//I2C control register 1
 	volatile uint32_t CR2;			//I2C control register 2
 	volatile uint32_t OAR1;			//2C own address register 1
@@ -150,7 +153,8 @@ typedef struct{
 #define I2C3	((I2C_reg_t*)I2C3_BASEADDR)
 
 //RCC register structure
-typedef struct{
+typedef struct
+{
 	volatile uint32_t CR; 			//RCC clock control register
 	volatile uint32_t PLLCFGR; 		//RCC PLL configuration register
 	volatile uint32_t CFGR;			//RCC clock configuration register
@@ -190,7 +194,8 @@ typedef struct{
 #define RCC ((RCC_reg_t*) RCC_BASEADDR)
 
 //EXTI register structure
-typedef struct{
+typedef struct
+{
 	volatile uint32_t IMR;			//Interrupt mask register
 	volatile uint32_t EMR;			//Event mask register
 	volatile uint32_t RTSR;			//Rising trigger selection register
@@ -202,7 +207,8 @@ typedef struct{
 #define EXTI ((EXTI_reg_t*) EXTI_BASEADDR)
 
 //SYSCFG register structure
-typedef struct{
+typedef struct
+{
 	volatile uint32_t MEMRMP;
 	volatile uint32_t PMC;
 	volatile uint32_t EXTICR[4];
@@ -329,7 +335,7 @@ typedef struct{
 									(x == GPIOG) ? 6 :\
 									(x == GPIOH) ? 7 :0 )
 /*
- * IRQ numbers for each interrupt
+ * IRQ numbers for GPIO, SPI, I2C and USART interrupts
  */
 #define IRQ_NO_EXTI0		6
 #define IRQ_NO_EXTI1    	7
@@ -343,6 +349,14 @@ typedef struct{
 #define IRQ_NO_SPI2			36
 #define IRQ_NO_SPI3			51
 #define IRQ_NO_SPI4			84
+
+#define IRQ_NO_I2C1_EV		31
+#define IRQ_NO_I2C1_ER		32
+#define IRQ_NO_I2C2_EV		33
+#define IRQ_NO_I2C2_ER		34
+#define IRQ_NO_I2C3_EV		72
+#define IRQ_NO_I2C3_ER		73
+
 
 /*
  * bit position macros for SPI registers
@@ -409,6 +423,8 @@ typedef struct{
 #define I2C_CR2_DMAEN		11
 #define I2C_CR2_LAST		12
 
+//OAR
+#define I2C_OAR_ADDMODE		15
 //SR1
 #define I2C_SR1_SB			0
 #define I2C_SR1_ADDR		1
@@ -438,7 +454,7 @@ typedef struct{
 //CCR
 #define I2C_CCR_CCR			0
 #define I2C_CCR_DUTY		14
-#define I2C_CCR_FX			15
+#define I2C_CCR_FS			15
 
 
 
@@ -455,6 +471,8 @@ typedef struct{
 #define DISABLE 	0
 #define SET 		ENABLE
 #define RESET 		DISABLE
-//#define NULL		((void*)0)
+#define NULL		((void*)0)
+#define READ 		1
+#define WRITE		0
 
 #endif /* DRIVERS_STM32F446XX_H_ */

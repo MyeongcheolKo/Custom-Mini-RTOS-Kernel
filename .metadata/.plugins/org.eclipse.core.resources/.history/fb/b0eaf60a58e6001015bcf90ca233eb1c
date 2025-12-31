@@ -1,0 +1,94 @@
+/*
+ * I2C_driver.h
+ *
+ *  Created on: Dec 30, 2025
+ *      Author: krisko
+ */
+
+#ifndef DRIVERS_I2C_DRIVER_H_
+#define DRIVERS_I2C_DRIVER_H_
+
+#include "STM32F446xx.h"
+
+/*
+ * I2C configuration structure
+ */
+typedef struct
+{
+	uint32_t 	I2C_SCLK_speed;				//!< possible values from @I2C_SCLK_SPEED
+	uint8_t 	I2C_device_address;			//values specified by user application
+	uint8_t 	I2C_ACK_control;			//!< possible values from @I2C_ACK_CONTROL
+	uint16_t	I2C_FM_duty_cycle;			//!< possible values from @I2C_FM_DUTY
+}I2C_config_t;
+
+/*
+ * Handle structure for I2C peripheral
+ */
+typedef struct
+{
+	I2C_reg_t 		*p_I2Cx;
+	I2C_config_t	I2Cx_config;
+}I2C_Handle_t;
+
+/*
+ * @I2C_SCLK_SPEED
+ */
+#define I2C_SCLK_SPEED_SM		100000	//standard mode
+#define I2C_SCLK_SPEED_FM2K		200000	//fast mode 2k
+#define I2C_SCLK_SPEED_FM4K		400000	//fast mode 4k
+
+/*
+ * @I2C_ACK_CONTROL
+ */
+#define I2C_ACK_DISABlE		0
+#define I2C_ACK_ENABLE		1
+
+
+/*
+ *  @I2C_FM_DUTY
+ */
+#define I2C_FM_DUTY_2		0
+#define I2C_FM_DUTY_16_9	1
+
+
+/**************************APIs**************************/
+
+/*
+ * clock setup
+ */
+void I2C_clock_control(I2C_reg_t *p_I2Cx, uint8_t enable);
+
+/*
+ * initialize and diinitialize
+ */
+void I2C_init(I2C_Handle_t *p_I2C_Handle);
+void I2C_deinit(I2C_reg_t *p_I2Cx);
+
+/*
+ * send and receive
+ */
+
+
+/*
+ * IQR configuration and handling
+ */
+void I2C_IRQ_config(uint8_t IRQ_num, uint8_t enable);
+void I2C_set_priority(uint8_t IRQ_num, uint8_t IRQ_priority);
+void I2C_IRQ_handler(I2C_Handle_t *p_I2C_Handle);
+
+/*
+ * other peripheral control APIs
+ */
+void I2C_periph_control(I2C_reg_t *p_I2Cx, uint8_t enable);
+uint8_t I2C_get_flag_status(I2C_reg_t *p_I2Cx, uint8_t flag_bit);
+
+
+
+/*
+ * user application APIs
+ */
+__attribute__((weak)) void I2C_event_callback(I2C_Handle_t *p_I2C_Handle, uint8_t event);
+
+
+
+#endif /* DRIVERS_I2C_DRIVER_H_ */

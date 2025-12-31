@@ -10,5 +10,6 @@
 
 #include "GPIO_driver.h"
 #include "SPI_driver.h"
+#include "I2C_driver.h"
 
 #endif /* DRIVERS_DRIVERS_H_ */

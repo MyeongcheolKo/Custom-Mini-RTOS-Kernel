@@ -268,17 +268,17 @@ void SPI_recieve(SPI_reg_t *p_SPIx, uint8_t *p_Rx_buffer, uint32_t len){
 }
 
 /*
- * @fcn:		SPI_send_IT
+ * @fcn:			SPI_send_IT
  *
- * @brief:		This function initiate SPI data transmission using interrupt mode
+ * @brief:			This function initiate SPI data transmission using interrupt mode
  *
  * @param[in]:		address of SPI Handle structure
  * @param[in]:		address of the Tx buffer that stores data to send
  * @param[in]:		the length of byte to send
  *
- * @return: 	whether data is transmission started successfully or not (0 or 1)
+ * @return: 		whether data is transmission started successfully or not (0 or 1)
  *
- * @note: 		this is a non-blocking call, actual data transmission will be handled by the interrupt handlers
+ * @note: 			this is a non-blocking call, actual data transmission will be handled by the interrupt handlers
  */
 uint8_t SPI_send_IT(SPI_Handle_t *p_SPI_Handle, uint8_t *p_Tx_buffer, uint32_t len)
 {
@@ -301,17 +301,17 @@ uint8_t SPI_send_IT(SPI_Handle_t *p_SPI_Handle, uint8_t *p_Tx_buffer, uint32_t l
 }
 
 /*
- * @fcn:		SPI_recieve_IT
+ * @fcn:			SPI_recieve_IT
  *
- * @brief:		TThis function initiate SPI data receive using interrupt mode
+ * @brief:			This function initiate SPI data receive using interrupt mode
  *
  * @param[in]:		address of SPI Handle structure
  * @param[in]:		address of the Rx buffer that stores data to send
  * @param[in]:		the length of byte to receive
  *
- * @return: 	whether data is receive has started successfully or not (0 or 1)
+ * @return: 		whether data is receive has started successfully or not (0 or 1)
  *
- * @note: 		this is a non-blocking call, actual data reading will be handled by the interrupt handlers
+ * @note: 			this is a non-blocking call, actual data reading will be handled by the interrupt handlers
  */
 uint8_t SPI_recieve_IT(SPI_Handle_t *p_SPI_Handle, uint8_t *p_Rx_buffer, uint32_t len)
 {
@@ -334,14 +334,14 @@ uint8_t SPI_recieve_IT(SPI_Handle_t *p_SPI_Handle, uint8_t *p_Rx_buffer, uint32_
 }
 
 /*
- * @fcn:			SPI_IRQ_config
+ * @fcn:				SPI_IRQ_config
  *
- * @brief:			This function enable/disable interrupt for the given peripheral
+ * @brief:				This function enable/disable interrupt for the given peripheral
  *
  * @param[in]:			the IRQ number to enable/disable
  * @param[in]:			ENABLE or DISABLE the IRQ
  *
- * @return: 		none
+ * @return: 			none
  */
 void SPI_IRQ_config(uint8_t IRQ_num, uint8_t enable)
 {

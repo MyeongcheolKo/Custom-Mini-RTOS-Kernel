@@ -14,7 +14,8 @@
 /*
  * SPI device configuration structure
  */
-typedef struct{
+typedef struct
+{
 	uint8_t SPI_device_mode;	//!< possible values from @SPI_DEVICE_MODES
 	uint8_t SPI_bus_config;		//!< possible values from @SPI_BUS_CONFIGS
 	uint8_t SPI_sclk_speed;		//!< possible values from @SPI_SCLK_SPEEDS
@@ -27,7 +28,8 @@ typedef struct{
 /*
  * SPI device Handle structure
  */
-typedef struct{
+typedef struct
+{
 	SPI_reg_t 		*p_SPIx;
 	SPI_config_t 	SPI_config;
 	uint8_t 		*p_Rx_buffer;
@@ -98,32 +100,45 @@ typedef struct{
 
 
 
-/**************************API**************************/
+/**************************APIs**************************/
 
-//clock setup
+/*
+ * clock setup
+ */
 void SPI_clock_control(SPI_reg_t *p_SPIx, uint8_t enable);
 
 
-//initialize and diinitialize
+/*
+ * initialize and diinitialize
+ */
 void SPI_init(SPI_Handle_t *p_SPI_Handle);
 void SPI_deinit(SPI_reg_t *p_SPIx);
-void SPI_periph_control(SPI_reg_t *p_SPIx, uint8_t enable);
 
 
-//send and recieve
+
+/*
+ * send and receive
+ */
 void SPI_send(SPI_reg_t *p_SPIx, uint8_t *p_Tx_buffer, uint32_t len);
 void SPI_recieve(SPI_reg_t *p_SPIx, uint8_t *p_Rx_buffer, uint32_t len);
 
-//interrupt based send and recieve
+/*
+ * interrupt based send and receive
+ */
 uint8_t SPI_send_IT(SPI_Handle_t *p_SPI_Handle, uint8_t *p_Tx_buffer, uint32_t len);
 uint8_t SPI_recieve_IT(SPI_Handle_t *p_SPI_Handle, uint8_t *p_Rx_buffer, uint32_t len);
 
-//IQR configuration and handling
+/*
+ * IQR configuration and handling
+ */
 void SPI_IRQ_config(uint8_t IRQ_num, uint8_t enable);
 void SPI_set_priority(uint8_t IRQ_num, uint8_t IRQ_priority);
 void SPI_IRQ_handler(SPI_Handle_t *p_SPI_Handle);
 
-//other pheripheral control APIs
+/*
+ * other peripheral control APIs
+ */
+void SPI_periph_control(SPI_reg_t *p_SPIx, uint8_t enable);
 uint8_t SPI_get_flag_status(SPI_reg_t *p_SPIx, uint8_t flag_bit);
 void SPI_SSI_config(SPI_reg_t *p_SPIx, uint8_t enable);
 void SPI_SSOE_config(SPI_reg_t *p_SPIx, uint8_t enable);
@@ -131,7 +146,9 @@ void SPI_clear_OVR_flag(SPI_Handle_t *p_SPI_Handle);
 void SPI_close_transmission(SPI_Handle_t *p_SPI_Handle);
 void SPI_close_reception(SPI_Handle_t *p_SPI_Handle);
 
-//user application APIs
+/*
+ * user application APIs
+ */
 __attribute__((weak)) void SPI_event_callback(SPI_Handle_t *p_SPI_Handle, uint8_t event);
 
 

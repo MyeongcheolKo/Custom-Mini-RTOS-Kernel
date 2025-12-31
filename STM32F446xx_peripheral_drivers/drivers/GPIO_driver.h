@@ -13,7 +13,8 @@
 /*
  * GPIO pin configuration structure
  */
-typedef struct{
+typedef struct
+{
 	uint8_t GPIO_pin_num;				//!< possible values from @GPIO_PIN_NUMBERS
 	uint8_t GPIO_pin_mode;				//!< possible values from @GPIO_PIN_MODES
 	uint8_t GPIO_pin_speed;				//!< possible values from @GPIO_PIN_SPEEDS
@@ -25,7 +26,8 @@ typedef struct{
 /*
  * Handle structure for a GPIO pin
  */
-typedef struct{
+typedef struct
+{
 	GPIO_reg_t *p_GPIOx; 			//!<the specific GPIO port base address specified by the user
 	GPIO_pin_config_t GPIO_config; 	//!< the GPIO configuration settings specified by user
 }GPIO_Handle_t;
@@ -90,19 +92,25 @@ typedef struct{
 
 
 
-/**************************API**************************/
+/**************************APIs**************************/
 
-//clock setup
+/*
+ * clock setup
+ */
 void GPIO_clock_control(GPIO_reg_t *p_GPIOx, uint8_t enable);
 
 
-//initialize and diinitialize
+/*
+ * initialize and diinitialize
+ */
 void GPIO_init(GPIO_Handle_t *p_GPIO_Handle);
 void GPIO_deinit(GPIO_reg_t *p_GPIOx);
 
 
 
-//read and write
+/*
+ * read and write
+ */
 uint8_t GPIO_read_input_pin(GPIO_reg_t *p_GPIOx, uint8_t pin_num);
 uint16_t GPIO_read_input_port(GPIO_reg_t *p_GPIOx);\
 
@@ -111,7 +119,9 @@ void GPIO_write_output_port(GPIO_reg_t *p_GPIOx, uint16_t val);
 void GPIO_toggle_output_pin(GPIO_reg_t *p_GPIOx, uint8_t pin_num);
 
 
-//IQR configuration and handling
+/*
+ * IQR configuration and handling
+ */
 void GPIO_IRQ_config(uint8_t IRQ_num, uint8_t enable);
 void GPIO_set_priority(uint8_t IRQ_num, uint8_t IRQ_priority);
 void GPIO_IRQ_handler(uint8_t pin_num);
