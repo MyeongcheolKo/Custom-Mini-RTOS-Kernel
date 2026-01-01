@@ -9,9 +9,8 @@
 #include "drivers.h"
 
 /*
- * This sample application have STM32F446RE (Master) sending a command byte (67) to Arduino Uno (Slave), and
- * Arduino responds with 0xF5 as acknowledgement if it verifies it receives 67, the correct command.
- * STM32 then blinks LD2 LED if it receives the valid acknowledgement (0xF5).
+ * This sample application have STM32F446RE (Master) sending message to Arduino Uno (Slave) by I2C when the
+ * on board button on STM32F446RE is pressed.
  *
  * pins used:
  * PB6 - I2C1_SCL
@@ -102,7 +101,7 @@ int main(void)
 	//configure the I2C1 parameters
 	I2C1_inits();
 	//enable I2C1
-	I2C_periph_control(I2C1, ENABLE);
+	I2C_periph_control(&I2C1_Handle, ENABLE);
 
 
 	uint8_t send_data[] = "Testing I2C master send\n";
@@ -113,7 +112,7 @@ int main(void)
 		delay();
 
 		//send data to slave
-		I2C_Master_send(&I2C1_Handle, send_data, len, SLAVE_ADDR);
+		I2C_Master_send(&I2C1_Handle, send_data, len, SLAVE_ADDR, I2C_SR_DISABLE);
 	}
 
 

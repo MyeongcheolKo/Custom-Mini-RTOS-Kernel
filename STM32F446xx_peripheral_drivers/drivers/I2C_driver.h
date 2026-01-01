@@ -57,6 +57,12 @@ typedef struct
 #define I2C_FM_DUTY_2		0
 #define I2C_FM_DUTY_16_9	1
 
+/*
+ * possible repeated start(SR) values
+ */
+#define I2C_SR_DISABLE	0
+#define I2C_SR_ENABLE	1
+
 /**************************APIs**************************/
 
 /*
@@ -73,8 +79,8 @@ void I2C_deinit(I2C_reg_t *p_I2Cx);
 /*
  * send and receive
  */
-void I2C_Master_send(I2C_Handle_t *p_I2C_Handle, uint8_t *p_Tx_buffer, uint32_t len, uint8_t slave_addr);
-
+void I2C_Master_send(I2C_Handle_t *p_I2C_Handle, uint8_t *p_Tx_buffer, uint32_t len, uint8_t slave_addr, uint8_t SR_enable);
+void I2C_Master_receive(I2C_Handle_t *p_I2C_Handle, uint8_t *p_Rx_buffer, uint32_t len, uint8_t slave_addr, uint8_t SR_enable);
 
 /*
  * IQR configuration and handling
@@ -86,9 +92,10 @@ void I2C_IRQ_handler(I2C_Handle_t *p_I2C_Handle);
 /*
  * other peripheral control APIs
  */
-void I2C_periph_control(I2C_reg_t *p_I2Cx, uint8_t enable);
+void I2C_periph_control(I2C_Handle_t *p_I2C_Handle, uint8_t enable);
 uint8_t I2C_get_flag_status(I2C_reg_t *p_I2Cx, uint8_t SR, uint8_t flag_bit);
-uint32_t RCC_get_pclk1(void);
+uint32_t I2C_RCC_get_pclk1(void);
+void I2C_manage_acking(I2C_Handle_t *p_I2C_Handle, uint8_t enable);
 
 
 

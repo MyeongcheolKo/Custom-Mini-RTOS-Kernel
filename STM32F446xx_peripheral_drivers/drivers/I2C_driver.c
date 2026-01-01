@@ -69,16 +69,10 @@ void I2C_clock_control(I2C_reg_t *p_I2Cx, uint8_t enable)
 void I2C_init(I2C_Handle_t *p_I2C_Handle)
 {
 	uint32_t temp;
-	uint32_t PCLK1_freq_hz = RCC_get_pclk1();
+	uint32_t PCLK1_freq_hz = I2C_RCC_get_pclk1();
 
 	//enable peripheral clock
 	I2C_clock_control(p_I2C_Handle->p_I2Cx, ENABLE);
-
-	//configure ACK
-	temp = p_I2C_Handle->p_I2Cx->CR1;
-	temp &= ~(1 << I2C_CR1_ACK);
-	temp |= (1 << I2C_CR1_ACK);
-	p_I2C_Handle->p_I2Cx->CR1 = temp;
 
 
 	//configure clock frequency
@@ -170,7 +164,7 @@ void I2C_init(I2C_Handle_t *p_I2C_Handle)
  *
  * @note:			 only HSI and HSE are considered for system clock source, PLL is not considered
  */
-uint32_t RCC_get_pclk1(void)
+uint32_t I2C_RCC_get_pclk1(void)
 {
 	static const uint32_t possible_pscals[] = {2,4,8,16,64,128,256,512};
 	uint32_t system_clk, AHB_pscal, APB1_pscal;
@@ -240,10 +234,11 @@ void I2C_deinit(I2C_reg_t *p_I2Cx){
  * @param[in]:		address of the Tx buffer
  * @param[in]:		how many bytes of data to send
  * @param[in]:		slave address
+ * @param[in]:		enable or disable repeated start (I2C_SR_ENABLE or I2C_SR_DISABLE)
  *
  * @return:			none
  */
-void I2C_Master_send(I2C_Handle_t *p_I2C_Handle, uint8_t *p_Tx_buffer, uint32_t len, uint8_t slave_addr)
+void I2C_Master_send(I2C_Handle_t *p_I2C_Handle, uint8_t *p_Tx_buffer, uint32_t len, uint8_t slave_addr, uint8_t SR_enable)
 {
 	//generate starting condition
 	I2C_generate_start(p_I2C_Handle);
@@ -266,12 +261,92 @@ void I2C_Master_send(I2C_Handle_t *p_I2C_Handle, uint8_t *p_Tx_buffer, uint32_t 
 	//wait until TxE=1 (data register is empty) and BTF=1 (byte transfer is finished) to close communication
 	while(I2C_get_flag_status(p_I2C_Handle->p_I2Cx, 1, I2C_SR1_TxE) == 0);
 	while(I2C_get_flag_status(p_I2C_Handle->p_I2Cx, 1, I2C_SR1_BTF) == 0);
-	//generate stop condition
-	I2C_generate_stop(p_I2C_Handle);
+	//generate stop condition if repeated start disabled
+	if(SR_enable == I2C_SR_DISABLE)
+		I2C_generate_stop(p_I2C_Handle);
 }
 
+/*
+ * @fcn:			I2C_Master_receive
+ *
+ * @brief:			This function receives the given data from the slave at the given address
+ *
+ * @param[in]:		address of the I2C peripheral
+ * @param[in]:		address of the Rx buffer
+ * @param[in]:		how many bytes of data to receive
+ * @param[in]:		slave address
+ * @param[in]:		enable or disable repeated start (I2C_SR_ENABLE or I2C_SR_DISABLE)
+ *
+ * @return:			none
+ */
+void I2C_Master_receive(I2C_Handle_t *p_I2C_Handle, uint8_t *p_Rx_buffer, uint32_t len, uint8_t slave_addr, uint8_t SR_enable)
+{
+	//generate start condition
+	I2C_generate_start(p_I2C_Handle);
+	//check SB flag in SR1 to confirm that start condition is generated
+	while(I2C_get_flag_status(p_I2C_Handle->p_I2Cx, 1,  I2C_SR1_SB) == 0);
+	//send the address  to slave with the r/w bit set to write(0)
+	I2C_execute_addr_phase(p_I2C_Handle, slave_addr, READ);
+	//check ADDR flag in SR1 to confirm address is sent
+	while(I2C_get_flag_status(p_I2C_Handle->p_I2Cx, 1, I2C_SR1_ADDR) == 0);
 
+	//receiving only one byte of data
+	/*
+	 * note:
+	 * 		for len == 1, must disable ACK BEFORE clearing ADDR flag and generate STOP condition AFTER RXNE flag is set.
+	 * 		Clearing ADDR releases SCL, and byte transfer starts immediately. So ACK/NACK will be sent on the 9th clock (end of byte).
+	 * 		If ACK bit not disabled before ADDR clear, hardware will ACK, causing slave to send another unwanted byte.
+	 *
+	 *		for len >= 2, can clear ADDR flag as usual and disable ACK and generate STOP when len == 2,
+	 *		so the second last byte gets ACK and last byte gets NACK.
+	 *
+	 */
+	if(len == 1)
+	{
+		//disable ACK
+		I2C_manage_acking(p_I2C_Handle, DISABLE);
+		//clear the ADDR flag to release SCL stretch(pulled to LOW), so slave start transmitting the data
+		I2C_clear_ADDR_flag(p_I2C_Handle);
+		//wait until RXNE is set to 1
+		while(I2C_get_flag_status(p_I2C_Handle->p_I2Cx, 1,  I2C_SR1_RxNE) == 0);
+		//generate stop condition
+		if(SR_enable == I2C_SR_DISABLE)
+			I2C_generate_stop(p_I2C_Handle);
+		//read data from DR to Rx buffer
+		*p_Rx_buffer = p_I2C_Handle->p_I2Cx->DR;
+	}
+	else
+	{
+		//clear ADDR flag so data reception begins
+		I2C_clear_ADDR_flag(p_I2C_Handle);
+		while(len > 0)
+		{
+			//wait until RXNE is set to 1, ready to read
+			while(I2C_get_flag_status(p_I2C_Handle->p_I2Cx, 1,  I2C_SR1_RxNE) == 0);
 
+			if(len == 2)		//if only 2 bytes are left to receive
+			{
+				//disable ACK
+				I2C_manage_acking(p_I2C_Handle, DISABLE);
+				//generate stop condition
+				if(SR_enable == I2C_SR_DISABLE)
+					I2C_generate_stop(p_I2C_Handle);
+			}
+
+			//read data from DR to Rx buffer
+			*p_Rx_buffer = p_I2C_Handle->p_I2Cx->DR;
+			len--;
+			p_Rx_buffer++;
+
+		}
+	}
+	//re-enalbe ACK if configured
+	if(p_I2C_Handle->I2Cx_config.I2C_ACK_control == I2C_ACK_ENABLE)
+	{
+		I2C_manage_acking(p_I2C_Handle, ENABLE);
+	}
+
+}
 
 /*
  * @fcn:				I2C_IRQ_config
@@ -354,22 +429,32 @@ void I2C_set_priority(uint8_t IRQ_num, uint8_t IRQ_priority)
 /*
  * @fcn:		I2C_periph_control
  *
- * @brief:		This function enables the given I2C peripheral
+ * @brief:		This function enables the given I2C peripheral and the ACK bit as configured
  *
  * @param[in]:	address of the I2C peripheral
+ * @param[in]:	ENABLE or DISABLE
  *
  * @return:		none
  *
  * @note:		should be called after I2C_init (after configuration is done)
  */
-void I2C_periph_control(I2C_reg_t *p_I2Cx, uint8_t enable)
+void I2C_periph_control(I2C_Handle_t *p_I2C_Handle, uint8_t enable)
 {
 	if(enable == ENABLE)
 	{
-		p_I2Cx->CR1 |= (1 << I2C_CR1_PE);
+		p_I2C_Handle->p_I2Cx->CR1 |= (1 << I2C_CR1_PE);
 	}else
 	{
-		p_I2Cx->CR1 &= ~(1 << I2C_CR1_PE);
+		p_I2C_Handle->p_I2Cx->CR1 &= ~(1 << I2C_CR1_PE);
+	}
+	//enable or disable ACK bit accordingly as it should only be enable after PE is set
+	if(p_I2C_Handle->I2Cx_config.I2C_ACK_control == I2C_ACK_ENABLE )
+	{
+		I2C_manage_acking(p_I2C_Handle, ENABLE);
+	}
+	else
+	{
+		I2C_manage_acking(p_I2C_Handle, DISABLE);
 	}
 }
 
@@ -379,6 +464,7 @@ void I2C_periph_control(I2C_reg_t *p_I2Cx, uint8_t enable)
  * @brief:			This function returns the status of the given flag bit of the I2C status register(SR)
  *
  * @param[in]:		base address of the I2C device
+ * @param[in]:		which SR register to read (1 or 2)
  * @param[in]:		the flag bit of the SR register to get status from
  *
  * @return:			the status of the given flag bit
@@ -389,12 +475,33 @@ uint8_t I2C_get_flag_status(I2C_reg_t *p_I2Cx, uint8_t SR, uint8_t flag_bit)
 	{
 		return ( (p_I2Cx->SR1 >> flag_bit) & 1 );
 	}
-	else if(SR == 2)
+	else
 	{
-		return (  (p_I2Cx->SR2 >> flag_bit) & 1 );
+		return ( (p_I2Cx->SR2 >> flag_bit) & 1 );
 	}
 }
 
+/*
+ * @fcn:			I2C_manage_acking
+ *
+ * @brief:			This function disable or enable the ACK bit of I2C_CR1 register
+ *
+ * @param[in]:		base address of the I2C device
+ * @param[in]:		ENABLE or DISABLE
+ *
+ * @return:			the status of the given flag bit
+ */
+void I2C_manage_acking(I2C_Handle_t *p_I2C_Handle, uint8_t enable)
+{
+	if(enable == ENABLE)
+	{
+		p_I2C_Handle->p_I2Cx->CR1 |= (1 << I2C_CR1_ACK);
+	}
+	else if (enable == DISABLE)
+	{
+		p_I2C_Handle->p_I2Cx->CR1 &= ~(1 << I2C_CR1_ACK);
+	}
+}
 /*
  * private helper functions
  */
