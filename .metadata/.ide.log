@@ -1,15 +1,70 @@
-2025-12-31 23:03:45,179 [INFO] LogOutputStream:77 - [STDOUT_REDIRECT] StartTraceHandler.execute(), success : Collect=true
-2025-12-31 23:04:40,643 [INFO] LogOutputStream:77 - [STDOUT_REDIRECT] StartTraceHandler.execute(), success : Collect=false
-2025-12-31 23:04:42,922 [INFO] LogOutputStream:77 - [STDOUT_REDIRECT] StartTraceHandler.execute(), success : Collect=true
-2025-12-31 23:04:53,850 [INFO] LogOutputStream:77 - [STDOUT_REDIRECT] StartTraceHandler.execute(), success : Collect=false
-2025-12-31 23:04:59,445 [INFO] LogOutputStream:77 - [STDOUT_REDIRECT] StartTraceHandler.execute(), success : Collect=true
-2025-12-31 23:05:01,262 [INFO] LogOutputStream:77 - [STDOUT_REDIRECT] StartTraceHandler.execute(), success : Collect=false
-2025-12-31 23:05:02,253 [INFO] LogOutputStream:77 - [STDOUT_REDIRECT] StartTraceHandler.execute(), success : Collect=true
-2025-12-31 23:08:30,018 [INFO] LogOutputStream:77 - [STDOUT_REDIRECT] StartTraceHandler.execute(), success : Collect=false
-2025-12-31 23:08:34,035 [INFO] LogOutputStream:77 - [STDOUT_REDIRECT] StartTraceHandler.execute(), success : Collect=true
-2025-12-31 23:17:19,051 [INFO] LogOutputStream:77 - [STDOUT_REDIRECT] StartTraceHandler.execute(), success : Collect=false
-2025-12-31 23:17:21,767 [INFO] LogOutputStream:77 - [STDOUT_REDIRECT] StartTraceHandler.execute(), success : Collect=true
-2025-12-31 23:20:38,234 [INFO] LogOutputStream:77 - [STDOUT_REDIRECT] StartTraceHandler.execute(), success : Collect=false
-2025-12-31 23:20:40,543 [INFO] LogOutputStream:77 - [STDOUT_REDIRECT] StartTraceHandler.execute(), success : Collect=true
-2025-12-31 23:20:41,373 [INFO] LogOutputStream:77 - [STDOUT_REDIRECT] StartTraceHandler.execute(), success : Collect=false
-2025-12-31 23:20:43,584 [INFO] LogOutputStream:77 - [STDOUT_REDIRECT] StartTraceHandler.execute(), success : Collect=true
+2026-01-03 00:14:59,475 [INFO] WebApp:194 - Connection lost
+2026-01-03 00:15:00,142 [INFO] WebApp:191 - Connection restablished
+2026-01-03 00:31:01,083 [INFO] WebApp:194 - Connection lost
+2026-01-03 00:31:01,804 [INFO] WebApp:191 - Connection restablished
+2026-01-03 01:01:03,215 [INFO] WebApp:194 - Connection lost
+2026-01-03 01:01:04,301 [INFO] WebApp:191 - Connection restablished
+2026-01-03 01:18:32,139 [INFO] WebApp:194 - Connection lost
+2026-01-03 01:18:32,859 [INFO] WebApp:191 - Connection restablished
+2026-01-03 01:37:41,150 [INFO] WebApp:194 - Connection lost
+2026-01-03 01:37:41,863 [INFO] WebApp:191 - Connection restablished
+2026-01-03 01:54:02,067 [INFO] WebApp:194 - Connection lost
+2026-01-03 01:54:02,663 [INFO] WebApp:191 - Connection restablished
+2026-01-03 02:10:03,309 [INFO] WebApp:194 - Connection lost
+2026-01-03 02:10:04,016 [INFO] WebApp:191 - Connection restablished
+2026-01-03 02:22:28,066 [INFO] WebApp:194 - Connection lost
+2026-01-03 02:22:28,748 [INFO] WebApp:191 - Connection restablished
+2026-01-03 02:38:40,092 [INFO] WebApp:194 - Connection lost
+2026-01-03 02:38:40,736 [INFO] WebApp:191 - Connection restablished
+2026-01-03 02:55:47,073 [INFO] WebApp:194 - Connection lost
+2026-01-03 02:55:47,901 [INFO] WebApp:191 - Connection restablished
+2026-01-03 03:12:54,057 [INFO] WebApp:194 - Connection lost
+2026-01-03 03:12:54,705 [INFO] WebApp:191 - Connection restablished
+2026-01-03 03:23:29,721 [INFO] WebApp:194 - Connection lost
+2026-01-03 03:23:30,419 [INFO] WebApp:191 - Connection restablished
+2026-01-03 03:39:31,166 [INFO] WebApp:194 - Connection lost
+2026-01-03 03:39:32,161 [INFO] WebApp:191 - Connection restablished
+2026-01-03 04:00:28,127 [INFO] WebApp:194 - Connection lost
+2026-01-03 04:00:28,946 [INFO] WebApp:191 - Connection restablished
+2026-01-03 04:16:35,043 [INFO] WebApp:194 - Connection lost
+2026-01-03 04:16:36,042 [INFO] WebApp:191 - Connection restablished
+2026-01-03 04:24:30,061 [INFO] WebApp:194 - Connection lost
+2026-01-03 04:24:30,783 [INFO] WebApp:191 - Connection restablished
+2026-01-03 04:41:50,038 [INFO] WebApp:194 - Connection lost
+2026-01-03 04:41:50,801 [INFO] WebApp:191 - Connection restablished
+2026-01-03 06:12:28,181 [INFO] WebApp:194 - Connection lost
+2026-01-03 06:12:28,801 [INFO] WebApp:191 - Connection restablished
+2026-01-03 06:25:31,115 [INFO] WebApp:194 - Connection lost
+2026-01-03 06:25:31,732 [INFO] WebApp:191 - Connection restablished
+2026-01-03 06:42:58,135 [INFO] WebApp:194 - Connection lost
+2026-01-03 06:42:58,881 [INFO] WebApp:191 - Connection restablished
+2026-01-03 06:59:02,341 [INFO] WebApp:194 - Connection lost
+2026-01-03 06:59:03,225 [INFO] WebApp:191 - Connection restablished
+2026-01-03 07:16:21,115 [INFO] WebApp:194 - Connection lost
+2026-01-03 07:16:22,392 [INFO] WebApp:191 - Connection restablished
+2026-01-03 07:26:32,175 [INFO] WebApp:194 - Connection lost
+2026-01-03 07:26:32,891 [INFO] WebApp:191 - Connection restablished
+2026-01-03 07:44:21,156 [INFO] WebApp:194 - Connection lost
+2026-01-03 07:44:21,804 [INFO] WebApp:191 - Connection restablished
+2026-01-03 08:01:02,994 [INFO] WebApp:194 - Connection lost
+2026-01-03 08:01:03,855 [INFO] WebApp:191 - Connection restablished
+2026-01-03 08:17:30,954 [INFO] WebApp:194 - Connection lost
+2026-01-03 08:17:31,710 [INFO] WebApp:191 - Connection restablished
+2026-01-03 08:27:32,887 [INFO] WebApp:194 - Connection lost
+2026-01-03 08:27:33,499 [INFO] WebApp:191 - Connection restablished
+2026-01-03 08:44:49,950 [INFO] WebApp:194 - Connection lost
+2026-01-03 08:44:50,689 [INFO] WebApp:191 - Connection restablished
+2026-01-03 08:50:01,994 [INFO] WebApp:194 - Connection lost
+2026-01-03 08:50:02,708 [INFO] WebApp:191 - Connection restablished
+2026-01-03 09:05:49,062 [INFO] WebApp:194 - Connection lost
+2026-01-03 09:05:49,678 [INFO] WebApp:191 - Connection restablished
+2026-01-03 09:22:48,044 [INFO] WebApp:194 - Connection lost
+2026-01-03 09:22:48,810 [INFO] WebApp:191 - Connection restablished
+2026-01-03 09:28:33,093 [INFO] WebApp:194 - Connection lost
+2026-01-03 09:28:33,720 [INFO] WebApp:191 - Connection restablished
+2026-01-03 09:45:15,900 [INFO] WebApp:194 - Connection lost
+2026-01-03 09:45:16,474 [INFO] WebApp:191 - Connection restablished
+2026-01-03 10:03:34,944 [INFO] WebApp:194 - Connection lost
+2026-01-03 10:03:35,677 [INFO] WebApp:191 - Connection restablished
+2026-01-03 10:20:15,987 [INFO] WebApp:194 - Connection lost
+2026-01-03 10:20:16,648 [INFO] WebApp:191 - Connection restablished

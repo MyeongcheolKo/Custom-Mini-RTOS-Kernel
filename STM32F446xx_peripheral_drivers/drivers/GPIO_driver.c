@@ -8,7 +8,7 @@
 
 
 /*
- * @fcn:			GPIO_clock_control
+ * @func:			GPIO_clock_control
  *
  * @brief:			This function enables or disables the peripheral clock for the given GPIO port
  *
@@ -84,7 +84,7 @@ void GPIO_clock_control(GPIO_reg_t *p_GPIOx, uint8_t enable)
 }
 
 /*
- * @fcn:			GPIO_init
+ * @func:			GPIO_init
  *
  * @brief:			This function initialize the given GPIO port
  *
@@ -186,7 +186,7 @@ void GPIO_init(GPIO_Handle_t *p_GPIO_Handle)
 	}
 }
 /*
- * @fcn:			GPIO_deinit
+ * @func:			GPIO_deinit
  *
  * @brief:			This function resets all registers of the given GPIO port
  *
@@ -228,7 +228,7 @@ void GPIO_deinit(GPIO_reg_t *p_GPIOx)
 }
 
 /*
- * @fcn:			GPIO_read_input_pin
+ * @func:			GPIO_read_input_pin
  *
  * @brief:			This function reads the input value of the given GPIO pin
  *
@@ -243,7 +243,7 @@ uint8_t GPIO_read_input_pin(GPIO_reg_t *p_GPIOx, uint8_t pin_num)
 	return (p_GPIOx->IDR >> pin_num) & 1;
 }
 /*
- * @fcn:			GPIO_read_input_port
+ * @func:			GPIO_read_input_port
  *
  * @brief:			This function reads the input value of the given GPIO port
  *
@@ -256,7 +256,7 @@ uint16_t GPIO_read_input_port(GPIO_reg_t *p_GPIOx)
 	return p_GPIOx->IDR;
 }
 /*
- * @fcn:			GPIO_write_output_pin
+ * @func:			GPIO_write_output_pin
  *
  * @brief:			This function writes the given value to the given GPIO pin
  *
@@ -277,7 +277,7 @@ void GPIO_write_output_pin(GPIO_reg_t *p_GPIOx, uint8_t pin_num, uint8_t val)
 	}
 }
 /*
- * @fcn:			GPIO_write_output_port
+ * @func:			GPIO_write_output_port
  *
  * @brief:			This function writes the given value to the given GPIO port
  *
@@ -291,7 +291,7 @@ void GPIO_write_output_port(GPIO_reg_t *p_GPIOx, uint16_t val)
 	p_GPIOx->ODR = val;
 }
 /*
- * @fcn:			GPIO_toggle_output_pin
+ * @func:			GPIO_toggle_output_pin
  *
  * @brief:			This function toggles the given GPIO pin
  *
@@ -306,7 +306,7 @@ void GPIO_toggle_output_pin(GPIO_reg_t *p_GPIOx, uint8_t pin_num)
 }
 
 /*
- * @fcn:			GPIO_IRQ_config
+ * @func:			GPIO_IRQ_config
  *
  * @brief:			This function enable/disable interrupt for the given peripheral
  *
@@ -360,7 +360,7 @@ void GPIO_IRQ_config(uint8_t IRQ_num, uint8_t enable)
 }
 
 /*
- * @fcn:			GPIO_IRQ_config
+ * @func:			GPIO_IRQ_config
  *
  * @brief:			This function enable/disable the GPIO pin as given
  *
@@ -381,7 +381,7 @@ void GPIO_set_priority(uint8_t IRQ_num, uint8_t IRQ_priority)
 }
 
 /*
- * @fcn:			GPIO_IRQ_handler
+ * @func:			GPIO_IRQ_handler
  *
  * @brief:			This function clears the pending interrupt of the given pin
  *

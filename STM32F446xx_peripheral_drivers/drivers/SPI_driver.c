@@ -14,7 +14,7 @@ void static SPI_TXEIE_Handle(SPI_Handle_t *p_SPI_Handle);
 void static SPI_RXNEIE_Handle(SPI_Handle_t *p_SPI_Handle);
 void static SPI_OVR_Handle(SPI_Handle_t *p_SPI_Handle);
 /*
- * @fcn:			SPI_clock_control
+ * @func:			SPI_clock_control
  *
  * @brief:			This function enable/disable the clock for the given SPI peripheral
  *
@@ -66,7 +66,7 @@ void SPI_clock_control(SPI_reg_t *p_SPIx, uint8_t enable)
 
 
 /*
- * @fcn:		SPI_init
+ * @func:		SPI_init
  *
  * @brief:		This function configures the SPI peripheral with the given configuration
  *
@@ -134,7 +134,7 @@ void SPI_init(SPI_Handle_t *p_SPI_Handle){
 }
 
 /*
- * @fcn:		SPI_deinit
+ * @func:		SPI_deinit
  *
  * @brief:		This function disables the clock of the given SPI peripheral
  *
@@ -149,20 +149,20 @@ void SPI_deinit(SPI_reg_t *p_SPIx){
 	}
 	else if(p_SPIx == SPI2)
 	{
-		SPI1_REG_RESET();
+		SPI2_REG_RESET();
 	}
 	else if(p_SPIx == SPI3)
 	{
-		SPI1_REG_RESET();
+		SPI3_REG_RESET();
 	}
 	else if(p_SPIx == SPI4)
 	{
-		SPI1_REG_RESET();
+		SPI4_REG_RESET();
 	}
 }
 
 /*
- * @fcn:		SPI_periph_control
+ * @func:		SPI_periph_control
  *
  * @brief:		This function enables the given SPI peripheral
  *
@@ -184,7 +184,7 @@ void SPI_periph_control(SPI_reg_t *p_SPIx, uint8_t enable)
 }
 
 /*
- * @fcn:			SPI_send
+ * @func:			SPI_send
  *
  * @brief:			This function sends data to the given SPI peripheral
  *
@@ -268,7 +268,7 @@ void SPI_recieve(SPI_reg_t *p_SPIx, uint8_t *p_Rx_buffer, uint32_t len){
 }
 
 /*
- * @fcn:			SPI_send_IT
+ * @func:			SPI_send_IT
  *
  * @brief:			This function initiate SPI data transmission using interrupt mode
  *
@@ -301,7 +301,7 @@ uint8_t SPI_send_IT(SPI_Handle_t *p_SPI_Handle, uint8_t *p_Tx_buffer, uint32_t l
 }
 
 /*
- * @fcn:			SPI_recieve_IT
+ * @func:			SPI_recieve_IT
  *
  * @brief:			This function initiate SPI data receive using interrupt mode
  *
@@ -334,7 +334,7 @@ uint8_t SPI_recieve_IT(SPI_Handle_t *p_SPI_Handle, uint8_t *p_Rx_buffer, uint32_
 }
 
 /*
- * @fcn:				SPI_IRQ_config
+ * @func:				SPI_IRQ_config
  *
  * @brief:				This function enable/disable interrupt for the given peripheral
  *
@@ -388,7 +388,7 @@ void SPI_IRQ_config(uint8_t IRQ_num, uint8_t enable)
 }
 
 /*
- * @fcn:			SPI_set_priority
+ * @func:			SPI_set_priority
  *
  * @brief:			This function enable/disable the GPIO pin as given
  *
@@ -408,7 +408,7 @@ void SPI_set_priority(uint8_t IRQ_num, uint8_t IRQ_priority)
 }
 
 /*
- * @fcn:			SPI_IRQ_handler
+ * @func:			SPI_IRQ_handler
  *
  * @brief:			This function identifies the interrupt source and redirects to the appropriate handler
  *
@@ -441,9 +441,9 @@ void SPI_IRQ_handler(SPI_Handle_t *p_SPI_Handle){
 		SPI_RXNEIE_Handle(p_SPI_Handle);
 	}
 
-	//check if interrupt is ERRIE and OVR is set, ie triggering interrupt when Rx buffer is not empty
-	temp1 = ( (p_SPI_Handle->p_SPIx->SR >> SPI_SR_RXNE) & 1);
-	temp2 = ( (p_SPI_Handle->p_SPIx->SR >> SPI_CR2_RXNEIE) & 1);
+	//check if interrupt is ERRIE and OVR
+	temp1 = ( (p_SPI_Handle->p_SPIx->SR >> SPI_SR_OVR) & 1);
+	temp2 = ( (p_SPI_Handle->p_SPIx->SR >> SPI_CR2_ERRIE) & 1);
 
 	if(temp1 & temp2)
 	{
@@ -453,7 +453,7 @@ void SPI_IRQ_handler(SPI_Handle_t *p_SPI_Handle){
 }
 
 /*
- * @fcn:		get_flag_status
+ * @func:		get_flag_status
  *
  * @brief:		This function returns the status of the given flag bit of the SPI status register(SR)
  *
@@ -468,7 +468,7 @@ uint8_t SPI_get_flag_status(SPI_reg_t *p_SPIx, uint8_t flag_bit)
 }
 
 /*
- * @fcn:		SPI_SSI_config
+ * @func:		SPI_SSI_config
  *
  * @brief:		This function enable/disable the SSI bit as given
  *
@@ -490,7 +490,7 @@ void SPI_SSI_config(SPI_reg_t *p_SPIx, uint8_t enable)
 }
 
 /*
- * @fcn:			SPI_SSOE_config
+ * @func:			SPI_SSOE_config
  *
  * @brief:			This function enable/disable the SSEO bit as given
  *
@@ -513,7 +513,7 @@ void SPI_SSOE_config(SPI_reg_t *p_SPIx, uint8_t enable)
 
 
 /*
- * @fcn:			SPI_TXEIE_Handle
+ * @func:			SPI_TXEIE_Handle
  *
  * @brief:			This function sends one byte, informs the user application
  * 					and closes the TXEIE interrupt if all data is sent
@@ -554,7 +554,7 @@ void static SPI_TXEIE_Handle(SPI_Handle_t *p_SPI_Handle)
 }
 
 /*
- * @fcn:			SPI_RXNEIE_Handle
+ * @func:			SPI_RXNEIE_Handle
  *
  * @brief:			This function reads one byte, informs the user application
  * 					and closes the RXNEIE interrupt if all data is read
@@ -594,7 +594,7 @@ void static SPI_RXNEIE_Handle(SPI_Handle_t *p_SPI_Handle)
 }
 
 /*
- * @fcn:			SPI_OVR_Handle
+ * @func:			SPI_OVR_Handle
  *
  * @brief:			This function clears the OVR flag if not in transmission and informs
  * 					user application to clear to clear OVR flag if peripheral is bust
@@ -619,7 +619,7 @@ void static SPI_OVR_Handle(SPI_Handle_t *p_SPI_Handle)
 }
 
 /*
- * @fcn:			SPI_clear_OVR_flag
+ * @func:			SPI_clear_OVR_flag
  *
  * @brief:			This function clears the OVR flag
  *
@@ -637,7 +637,7 @@ void SPI_clear_OVR_flag(SPI_Handle_t *p_SPI_Handle)
 }
 
 /*
- * @fcn:			SPI_close_transmission
+ * @func:			SPI_close_transmission
  *
  * @brief:			This function disables TXEIE and resets transmission related SPI Handler values for the given SPI peripheral
  *
@@ -657,7 +657,7 @@ void SPI_close_transmission(SPI_Handle_t *p_SPI_Handle)
 }
 
 /*
- * @fcn:			SPI_close_reception
+ * @func:			SPI_close_reception
  *
  * @brief:			This function disables RXNEIE and resets reception related SPI Handler values for the given SPI peripheral
  *
@@ -677,7 +677,7 @@ void SPI_close_reception(SPI_Handle_t *p_SPI_Handle)
 }
 
 /*
- * @fcn:			SPI_event_callback
+ * @func:			SPI_event_callback
  *
  * @brief:			This is a weak implementation of the function and should be overridden by user application
  *

@@ -98,6 +98,12 @@ typedef struct
 #define SPI_STATE_BUSY_IN_RX		1
 #define SPI_STATE_BUSY_IN_TX		2
 
+/*
+ * possible SPI application events
+ */
+#define SPI_EVENT_TX_CMPLT		0
+#define SPI_EVENT_RX_CMPLT		1
+#define SPI_EVENT_OVR_ERR		2
 
 
 /**************************APIs**************************/

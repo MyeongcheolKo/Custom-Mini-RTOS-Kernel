@@ -4,7 +4,7 @@ CFLAGS = -c -mcpu=$(MACH) -mthumb -mfloat-abi=soft -std=gnu11 -Wall -O0 -g -Idri
 LDFLAGS = -mcpu=$(MACH) -mthumb -mfloat-abi=soft --specs=nano.specs -T linker_script.ld -Wl,-Map=final.map
 LDFLAGS_SH = -mcpu=$(MACH) -mthumb -mfloat-abi=soft --specs=rdimon.specs -T linker_script.ld -Wl,-Map=final.map
 
-all:syscalls.o sysmem.o startup.o GPIO_driver.o SPI_driver.o I2C_driver.o I2C_master_send_receive.o final.elf
+all:syscalls.o sysmem.o startup.o GPIO_driver.o SPI_driver.o I2C_driver.o I2C_interrupt_send_receive.o final.elf
 
 semi:sysmem.o startup.o final_sh.elf
 
@@ -47,13 +47,13 @@ SPI_transmit_arduino.o:sample_applications/SPI_transmit_arduino.c
 SPI_send_recieve_arduino.o:sample_applications/SPI_send_recieve_arduino.c
 	$(CC) $(CFLAGS) $^ -o $@
 
-I2C_master_send_arduino.o:sample_applications/I2C_master_send_arduino.c
+I2C_controller_send_arduino.o:sample_applications/I2C_controller_send_arduino.c
 	$(CC) $(CFLAGS) $^ -o $@
 
-I2C_master_send_receive.o:sample_applications/I2C_master_send_receive.c
+I2C_interrupt_send_receive.o:sample_applications/I2C_interrupt_send_receive.c
 	$(CC) $(CFLAGS) $^ -o $@
 	
-final.elf:startup.o syscalls.o sysmem.o GPIO_driver.o SPI_driver.o I2C_driver.o I2C_master_send_receive.o
+final.elf:startup.o syscalls.o sysmem.o GPIO_driver.o SPI_driver.o I2C_driver.o I2C_interrupt_send_receive.o
 	$(CC) $(LDFLAGS) $^ -o $@
 
 final_sh.elf:startup.o sysmem.o

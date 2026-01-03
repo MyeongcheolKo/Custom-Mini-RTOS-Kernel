@@ -418,6 +418,7 @@ typedef struct
 
 //CR2
 #define I2C_CR2_FREQ		0
+#define I2C_CR2_ITERREN		8
 #define I2C_CR2_ITEVTEN		9
 #define I2C_CR2_ITBUFEN		10
 #define I2C_CR2_DMAEN		11
@@ -455,16 +456,6 @@ typedef struct
 #define I2C_CCR_CCR			0
 #define I2C_CCR_DUTY		14
 #define I2C_CCR_FS			15
-
-
-
-/*
- * possible SPI application events
- */
-#define SPI_EVENT_TX_CMPLT		0
-#define SPI_EVENT_RX_CMPLT		1
-#define SPI_EVENT_OVR_ERR		2
-
 
 //some generic macros
 #define ENABLE 		1
