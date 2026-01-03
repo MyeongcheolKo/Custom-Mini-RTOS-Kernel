@@ -1,6 +1,0 @@
-23:16:43 **** Incremental Build of configuration Default for project task_scheduler ****
-make all 
-make: Nothing to be done for 'all'.
-
-23:16:44 Build Finished. 0 errors, 0 warnings. (took 248ms)
-

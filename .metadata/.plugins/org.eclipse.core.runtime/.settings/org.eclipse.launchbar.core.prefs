@@ -1,9 +1,0 @@
-LaunchTargetManager/org.eclipse.launchbar.core.launchTargetType.local,Local/arch=x86_64
-LaunchTargetManager/org.eclipse.launchbar.core.launchTargetType.local,Local/name=Local
-LaunchTargetManager/org.eclipse.launchbar.core.launchTargetType.local,Local/os=macosx
-configDescList=org.eclipse.cdt.dsf.gdb.gdbRemotedescriptorType\:peripheral_drivers Default,org.eclipse.cdt.dsf.gdb.gdbRemotedescriptorType\:Debug,org.eclipse.cdt.dsf.gdb.gdbRemotedescriptorType\:final
-eclipse.preferences.version=1
-org.eclipse.cdt.dsf.gdb.gdbRemotedescriptorType\:Debug/activeLaunchMode=debug
-org.eclipse.cdt.dsf.gdb.gdbRemotedescriptorType\:Debug/activeLaunchTarget=null\:---
-org.eclipse.cdt.dsf.gdb.gdbRemotedescriptorType\:task_scheduler\ Debug/activeLaunchMode=debug
-org.eclipse.cdt.dsf.gdb.gdbRemotedescriptorType\:task_scheduler\ Debug/activeLaunchTarget=null\:---
