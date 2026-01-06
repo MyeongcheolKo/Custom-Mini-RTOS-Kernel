@@ -103,7 +103,6 @@ typedef struct
 #define USART_EV_ORE			4
 #define USART_ER_NF				5
 #define USART_ER_FE				6
-#define USART_ER_ORE			7
 
 
 /**************************APIs**************************/

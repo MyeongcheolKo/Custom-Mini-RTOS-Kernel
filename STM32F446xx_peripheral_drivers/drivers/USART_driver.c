@@ -147,6 +147,9 @@ void USART_init(USART_Handle_t *p_USART_Handle)
 
 	//configure number of stop bits
 	temp2 = p_USART_Handle->USARTx_config.USART_num_stop_bits;
+
+	//clear stop bits first
+	temp1 &= ~(0x3 << USART_CR2_STOP);
 	if(temp2 == USART_STOP_BITS_1)
 	{
 		temp1 &= ~(1 << USART_CR2_STOP);
@@ -289,7 +292,7 @@ void USART_deinit(USART_reg_t *p_USARTx){
 void USART_send(USART_Handle_t *p_USART_Handle, uint8_t *p_Tx_buffer, uint32_t len)
 {
 	uint16_t *p_data;
-	for(int i = 0; i < len; i++)
+	for(uint32_t i = 0; i < len; i++)
 	{
 		while(USART_get_flag_status(p_USART_Handle->p_USARTx, USART_SR_TXE) == 0);
 
@@ -343,7 +346,7 @@ void USART_send(USART_Handle_t *p_USART_Handle, uint8_t *p_Tx_buffer, uint32_t l
  */
 void USART_receive(USART_Handle_t *p_USART_Handle, uint8_t *p_Rx_buffer, uint32_t len)
 {
-	for(int i = 0; i < len; i++)
+	for(uint32_t i = 0; i < len; i++)
 	{
 		//wait until RXNE is set
 		while(USART_get_flag_status(p_USART_Handle->p_USARTx, USART_SR_RXNE) == 0);
@@ -530,7 +533,7 @@ void USART_IRQ_handling(USART_Handle_t *p_USART_Handle)
 	 * check for TC flag
 	 */
 	temp1 = (p_USART_Handle->p_USARTx->SR >> USART_SR_TC) & 1;
-	temp2 = (p_USART_Handle->p_USARTx->CR1 >> USART_CR1_TCIE);
+	temp2 = (p_USART_Handle->p_USARTx->CR1 >> USART_CR1_TCIE) & 1;
 	if(temp1 && temp2)
 	{
 		//the interrupt was caused by TC
@@ -577,12 +580,14 @@ void USART_IRQ_handling(USART_Handle_t *p_USART_Handle)
 						uint16_t *p_data = (uint16_t*)p_USART_Handle->p_Tx_buffer;	//get 2 bytes of data
 						p_USART_Handle->p_USARTx->DR = (*p_data & (uint16_t)0x01ff); //only need the 9 bits out of the 2 bytes
 						p_USART_Handle->p_Tx_buffer += 2;	//increment by 2 (2 bytes)
+						p_USART_Handle->Tx_len -= 2;
 					}
 					else
 					{
 						//parity is enabled to either ODD or EVEN, so only 8 bits will be sent
 						p_USART_Handle->p_USARTx->DR = *p_USART_Handle->p_Tx_buffer;
 						p_USART_Handle->p_Tx_buffer++;		//increment by 1 (1 byte)
+						p_USART_Handle->Tx_len--;
 					}
 				}
 				else
@@ -599,6 +604,7 @@ void USART_IRQ_handling(USART_Handle_t *p_USART_Handle)
 						p_USART_Handle->p_USARTx->DR = (*p_USART_Handle->p_Tx_buffer & 0x7F);
 					}
 					p_USART_Handle->p_Tx_buffer++;
+					p_USART_Handle->Tx_len--;
 				}
 			}
 
@@ -618,47 +624,53 @@ void USART_IRQ_handling(USART_Handle_t *p_USART_Handle)
 	if(temp1 && temp2)
 	{
 		//the interrupt was cause by RXNE
-		if(p_USART_Handle->Rx_len > 0)
+		if(p_USART_Handle->Rx_state == USART_STATE_BUSY_RX)
 		{
-			if(p_USART_Handle->USARTx_config.USART_word_len == USART_WORD_LEN_9BITS)
+			if(p_USART_Handle->Rx_len > 0)
 			{
-				//receive 9 bits of data
-				if(p_USART_Handle->USARTx_config.USART_parity == USART_PARITY_DISABLE)
+				if(p_USART_Handle->USARTx_config.USART_word_len == USART_WORD_LEN_9BITS)
 				{
-					//parity is not used, so all 9 bits are data
-					*(uint16_t*)p_USART_Handle->p_Rx_buffer = (p_USART_Handle->p_USARTx->DR & (uint16_t)0x01ff);
-					p_USART_Handle->p_Rx_buffer += 2;
+					//receive 9 bits of data
+					if(p_USART_Handle->USARTx_config.USART_parity == USART_PARITY_DISABLE)
+					{
+						//parity is not used, so all 9 bits are data
+						*(uint16_t*)p_USART_Handle->p_Rx_buffer = (p_USART_Handle->p_USARTx->DR & (uint16_t)0x01ff);
+						p_USART_Handle->p_Rx_buffer += 2;
+						p_USART_Handle->Rx_len -= 2;
+					}
+					else
+					{
+						//parity is used, so only 8 bits are data and 1 is parity
+						*p_USART_Handle->p_Rx_buffer = (p_USART_Handle->p_USARTx->DR & (uint8_t)0xff);
+						p_USART_Handle->p_Rx_buffer++;
+						p_USART_Handle->Rx_len--;
+					}
 				}
 				else
 				{
-					//parity is used, so only 8 bits are data and 1 is parity
-					*p_USART_Handle->p_Rx_buffer = (p_USART_Handle->p_USARTx->DR & (uint8_t)0xff);
+					//receive 8 bits of data
+					if(p_USART_Handle->USARTx_config.USART_parity == USART_PARITY_DISABLE)
+					{
+						//parity is not used, so all 8 bits are data
+						*p_USART_Handle->p_Rx_buffer = (p_USART_Handle->p_USARTx->DR & (uint8_t)0xff);
+					}
+					else
+					{
+						//parity is used, so only 7 bits are data and 1 is parity
+						*p_USART_Handle->p_Rx_buffer = (p_USART_Handle->p_USARTx->DR & (uint8_t)0x7f);
+					}
 					p_USART_Handle->p_Rx_buffer++;
+					p_USART_Handle->Rx_len--;
 				}
-			}
-			else
-			{
-				//receive 8 bits of data
-				if(p_USART_Handle->USARTx_config.USART_parity == USART_PARITY_DISABLE)
-				{
-					//parity is not used, so all 8 bits are data
-					*p_USART_Handle->p_Rx_buffer = (p_USART_Handle->p_USARTx->DR & (uint8_t)0xff);
-				}
-				else
-				{
-					//parity is used, so only 7 bits are data and 1 is parity
-					*p_USART_Handle->p_Rx_buffer = (p_USART_Handle->p_USARTx->DR & (uint8_t)0x7f);
-				}
-				p_USART_Handle->p_Rx_buffer++;
-			}
 
-			if(p_USART_Handle->Rx_len == 0)
-			{
-				//disable RXNE(Rx buffer not empty interrupt)
-				p_USART_Handle->p_USARTx->CR1 &= ~(1 << USART_CR1_RXNEIE);
-				p_USART_Handle->Rx_state = USART_STATE_READY;
-				//notify user application
-				USART_event_callback(p_USART_Handle, USART_EV_RX_CMPLT);
+				if(p_USART_Handle->Rx_len == 0)
+				{
+					//disable RXNE(Rx buffer not empty interrupt)
+					p_USART_Handle->p_USARTx->CR1 &= ~(1 << USART_CR1_RXNEIE);
+					p_USART_Handle->Rx_state = USART_STATE_READY;
+					//notify user application
+					USART_event_callback(p_USART_Handle, USART_EV_RX_CMPLT);
+				}
 			}
 		}
 	}
@@ -699,13 +711,17 @@ void USART_IRQ_handling(USART_Handle_t *p_USART_Handle)
 	}
 
 	/*
-	 * check for OVE flag
+	 * check for ORE flag
 	 */
 	temp1 = (p_USART_Handle->p_USARTx->SR >> USART_SR_ORE) & 1;
 	temp2 = (p_USART_Handle->p_USARTx->CR1 >> USART_CR1_RXNEIE) & 1;
 	if(temp1 && temp2)
 	{
-		//the interrupt is caused by OVE
+		//the interrupt is caused by ORE
+
+		//clear ORE
+		dummy_byte = p_USART_Handle->p_USARTx->SR;
+		dummy_byte = p_USART_Handle->p_USARTx->DR;
 
 		//notify user application
 		USART_event_callback(p_USART_Handle, USART_EV_ORE);
@@ -741,15 +757,8 @@ void USART_IRQ_handling(USART_Handle_t *p_USART_Handle)
 			//notify user application
 			USART_event_callback(p_USART_Handle, USART_ER_FE);
 		}
-		else if ( (temp1 >> USART_SR_ORE) & 1 )
-		{
-			//interrupt was caused by FE (framing error)
-
-			//notify user application
-			USART_event_callback(p_USART_Handle, USART_ER_ORE);
-		}
 	}
-
+	(void)dummy_byte;
 }
 
 /*
