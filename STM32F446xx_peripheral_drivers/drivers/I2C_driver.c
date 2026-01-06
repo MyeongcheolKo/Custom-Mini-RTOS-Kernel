@@ -71,7 +71,7 @@ void I2C_clock_control(I2C_reg_t *p_I2Cx, uint8_t enable)
 void I2C_init(I2C_Handle_t *p_I2C_Handle)
 {
 	uint32_t temp;
-	uint32_t PCLK1_freq_hz = I2C_RCC_get_pclk1();
+	uint32_t PCLK1_freq_hz = RCC_get_pclk1();
 
 	//enable peripheral clock
 	I2C_clock_control(p_I2C_Handle->p_I2Cx, ENABLE);
@@ -148,60 +148,15 @@ void I2C_init(I2C_Handle_t *p_I2C_Handle)
 	p_I2C_Handle->p_I2Cx->TRISE = (temp & 0x3F);
 }
 
-/*
- * @func:			RCC_get_pclk1
- *
- * @brief:			This function calculates the clock speed of APB1
- *
- * @return:			APB clock speed
- *
- * @note:			only HSI and HSE are considered for system clock source, PLL is not considered
- */
-uint32_t I2C_RCC_get_pclk1(void)
-{
-	static const uint32_t possible_pscals[] = {2,4,8,16,64,128,256,512};
-	uint32_t system_clk, AHB_pscal, APB1_pscal;
-
-	//find system clock source speed
-	uint32_t clk_src = (RCC->CFGR >> 2) & 0b11;
-	if(clk_src == 0){	//HSI
-		system_clk = 16000000;
-	}
-	else if (clk_src == 1)	//HSE
-	{
-		system_clk = 8000000;
-	}
-	else
-	{
-		// PLL not supported, assume HSI as fallback
-		system_clk = 16000000;
-	}
-	//find AHB prescalar
-	uint32_t HPRE = (RCC->CFGR >> 4) & 0b1111;
-	if(HPRE < 8) 	//vals below 0b1000 are all not divided by
-		AHB_pscal = 1;
-	else			//vals at 0b1000 and above are divided by
-		AHB_pscal = possible_pscals[HPRE - 8];
-
-	//find APB1 prescalar, I2C peripherals all under APB1
-	uint32_t PPRE1 = (RCC->CFGR >> 10) & 0b111;
-	if(PPRE1 < 4)
-		APB1_pscal = 1;
-	else
-		APB1_pscal = possible_pscals[PPRE1 - 4];
-
-	return (system_clk / AHB_pscal) / APB1_pscal;
-}
-
 
 /*
- * @func:		I2C_deinit
+ * @func:			I2C_deinit
  *
- * @brief:		This function disables the clock of the given I2C peripheral
+ * @brief:			This function disables the clock of the given I2C peripheral
  *
  * @param[in]:		address of the I2C peripheral
  *
- * @return:		none
+ * @return:			none
  */
 void I2C_deinit(I2C_reg_t *p_I2Cx){
 	if(p_I2Cx == I2C1)

@@ -9,6 +9,7 @@
 #define DRIVERS_I2C_DRIVER_H_
 
 #include "STM32F446xx.h"
+#include "rcc.h"
 
 /*
  * I2C configuration structure
@@ -130,8 +131,7 @@ void I2C_ER_IRQ_handling(I2C_Handle_t *p_I2C_Handle);
  */
 void I2C_periph_control(I2C_Handle_t *p_I2C_Handle, uint8_t enable);
 uint8_t I2C_get_flag_status(I2C_reg_t *p_I2Cx, uint8_t SR, uint8_t flag_bit);
-uint32_t I2C_RCC_get_pclk1(void);
-void I2C_manage_acking(I2C_Handle_t *p_I2C_Handle, uint8_t enable);\
+void I2C_manage_acking(I2C_Handle_t *p_I2C_Handle, uint8_t enable);
 void I2C_close_send(I2C_Handle_t *p_I2C_Handle);
 void I2C_close_receive(I2C_Handle_t *p_I2C_Handle);
 void I2C_generate_stop(I2C_Handle_t *p_I2C_Handle);

@@ -4,7 +4,7 @@ CFLAGS = -c -mcpu=$(MACH) -mthumb -mfloat-abi=soft -std=gnu11 -Wall -O0 -g -Idri
 LDFLAGS = -mcpu=$(MACH) -mthumb -mfloat-abi=soft --specs=nano.specs -T linker_script.ld -Wl,-Map=final.map
 LDFLAGS_SH = -mcpu=$(MACH) -mthumb -mfloat-abi=soft --specs=rdimon.specs -T linker_script.ld -Wl,-Map=final.map
 
-all:syscalls.o sysmem.o startup.o GPIO_driver.o SPI_driver.o I2C_driver.o I2C_interrupt_send_receive.o final.elf
+all:syscalls.o sysmem.o startup.o GPIO_driver.o SPI_driver.o I2C_driver.o USART_driver.o rcc.o I2C_interrupt_send_receive.o final.elf
 
 semi:sysmem.o startup.o final_sh.elf
 
@@ -24,6 +24,12 @@ SPI_driver.o:drivers/SPI_driver.c
 	$(CC) $(CFLAGS) $^ -o $@
 	
 I2C_driver.o:drivers/I2C_driver.c
+	$(CC) $(CFLAGS) $^ -o $@
+	
+USART_driver.o:drivers/USART_driver.c
+	$(CC) $(CFLAGS) $^ -o $@
+
+rcc.o:drivers/rcc.c
 	$(CC) $(CFLAGS) $^ -o $@
 	
 LED_toggle.o:sample_applications/LED_toggle.c
@@ -53,7 +59,7 @@ I2C_controller_send_arduino.o:sample_applications/I2C_controller_send_arduino.c
 I2C_interrupt_send_receive.o:sample_applications/I2C_interrupt_send_receive.c
 	$(CC) $(CFLAGS) $^ -o $@
 	
-final.elf:startup.o syscalls.o sysmem.o GPIO_driver.o SPI_driver.o I2C_driver.o I2C_interrupt_send_receive.o
+final.elf:startup.o syscalls.o sysmem.o GPIO_driver.o SPI_driver.o I2C_driver.o USART_driver.o rcc.o I2C_interrupt_send_receive.o
 	$(CC) $(LDFLAGS) $^ -o $@
 
 final_sh.elf:startup.o sysmem.o
