@@ -4,6 +4,12 @@ A mini RTOS kernel for ARM Cortex-M built from scratch, targeting STM32F446xx, i
 
 ## Table of Contents
 - [Task Scheduler (Kernel)](#task-schedulerkernel)
+- [Peripheral Drivers](#peripheral-drivers)
+  - [GPIO Driver](#gpio-driver)
+  - [SPI Driver](#spi-driver)
+  - [I2C Driver](#i2c-driver)
+  - [USART Driver](#usart-driver)
+  - [Sample Applications](#sample-applications)
 - [Bare-Metal Infrastructure](#bare-metal-infrastructure)
   - [Memory Map](#memory-map)
   - [Linker Script](#linker-script)
@@ -12,7 +18,7 @@ A mini RTOS kernel for ARM Cortex-M built from scratch, targeting STM32F446xx, i
 - [See It In Action!](#see-it-in-ation)
 - [Ideas for Future Improvements](#ideas-for-future-improvements)
 
-## Task Scheduler(Kernel)
+# Task Scheduler(Kernel)
 
 The scheduler manages 4 user tasks plus an idle task, using hardware features of the ARM Cortex-M architecture:
 
@@ -87,6 +93,104 @@ SysTick fires (every 1ms)
   - `PendSV_Handler`: Need manual control over what gets pushed/popped to the stack and where for context switching + function calls corrupt the EXC_RETURN value in LR
   - `init_scheduler_stack`: Modifying MSP itself, prologue/epilogue would use old/new MSP inconsistently
 - **Race condition in `task_delay`** - Disabled interrupts while setting block_count and current_state to prevent a race condition with SysTick_Handler. Without this, SysTick could increment g_tick_count between reading the value and setting the blocked state, causing the == check in unblock_tasks to miss and leave the task blocked forever.
+
+# Peripheral Drivers
+
+The peripheral driver library provides a hardware abstraction layer (HAL) for STM32F446xx peripherals. Each driver follows a consistent API pattern with configuration structures, handle structures, and consistent function naming. It also includes sample applications to test/demonstrate the use of the drivers.
+
+### Driver Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                      Application Layer                          │
+├─────────────────────────────────────────────────────────────────┤
+│ GPIO_driver   │   SPI_driver   │   I2C_driver   │  USART_driver │
+├─────────────────────────────────────────────────────────────────┤
+│                         STM32F446xx.h                           │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Common Driver Features
+
+All drivers share these characteristics:
+- **Clock Control** — Enable/disable peripheral clocks via RCC
+- **Initialization** — Configure peripheral with user-specified settings
+- **De-initialization** — Reset peripheral registers to default state
+- **Send and Receive Data** — Both polling and interrupt-driven modes
+- **Weak Callbacks** — Overrideable callback functions for interrupt events
+
+### STM32F446xx.h
+
+## GPIO Driver
+
+General Purpose Input/Output driver supporting all GPIO ports (A-H).
+
+#### Features
+- Pin mode configuration (Input, Output, Alternate Function, Analog)
+- Output type (Push-Pull, Open-Drain)
+- Speed configuration (Low, Medium, Fast, High)
+- Pull-up/Pull-down resistor configuration
+- Interrupt support (Rising edge, Falling edge, Both edges)
+- Alternate function selection 
+
+## SPI Driver
+
+Serial Peripheral Interface driver supporting SPI1-SPI4.
+
+#### Features
+- Master/Slave mode configuration
+- Full-duplex, Half-duplex, and Simplex communication
+- Configurable clock speed (prescaler from /2 to /256)
+- 8-bit or 16-bit data frame format
+- Clock polarity (CPOL) and phase (CPHA) configuration
+- Hardware/Software slave select management
+- Interrupt-driven transmit and receive
+- Overrun error handling
+
+## I2C Driver
+
+Inter-Integrated Circuit driver supporting I2C1-I2C3.
+
+#### Features
+- Controller (Master) and Target (Slave) mode
+- Standard mode (100kHz) and Fast mode (200kHz, 400kHz)
+- 7-bit addressing
+- Repeated start condition support
+- ACK/NACK management
+- Interrupt-driven communication
+- Comprehensive error handling (Bus error, Arbitration loss, ACK failure, Overrun, Timeout)
+
+## USART Driver
+
+Universal Synchronous/Asynchronous Receiver-Transmitter driver supporting USART1-3, UART4-5, USART6.
+
+#### Features
+- Transmit-only, Receive-only, or Full-duplex mode
+- Wide range of baud rates (1200 to 3M)
+- 8-bit or 9-bit word length
+- Configurable parity (None, Even, Odd)
+- Stop bit configuration (0.5, 1, 1.5, 2 bits)
+- Hardware flow control (CTS, RTS)
+- Interrupt-driven communication
+- Error detection (Framing, Noise, Overrun)
+
+## Sample Applications
+
+The `sample_applications/` directory contains working examples:
+
+| Application | Description |
+|-------------|-------------|
+| `LED_toggle.c` | Basic GPIO output - toggles onboard LED |
+| `button_LED.c` | GPIO input/output - LED controlled by button press |
+| `external_button_LED.c` | External button and LED with pull-up configuration |
+| `interrupt_button_LED.c` | GPIO interrupt - LED toggle on button interrupt |
+| `SPI_testing.c` | SPI loopback test |
+| `SPI_transmit_arduino.c` | SPI master transmit to Arduino slave |
+| `SPI_send_recieve_arduino.c` | SPI bidirectional communication with Arduino |
+| `I2C_controller_send_arduino.c` | I2C master send to Arduino slave |
+| `I2C_controller_send_receive.c` | I2C master send/receive with Arduino |
+| `I2C_interrupt_send_receive.c` | I2C interrupt-driven communication |
+
 
 # Bare-Metal Infrastructure
 The bare-metal infrastructure includes everything needed to get code running on the MCU before the scheduler takes over, including the linker script, startup code, debug output configuration, and the build system.
@@ -268,7 +372,9 @@ For semihosting, build with `make semi`. This links with `rdimon.specs` instead 
 - This was coupled with make `make load` to display outputs when implmenting the linker script, startup file and makefile. 
 
 ## See It In Action!
-<video src="custom_mini_rtos_kernel_demo.mp4" controls width="1000"></video>
+Watch the kernel and peripheral driver sample applications in action: [YouTube Playlist](https://www.youtube.com/playlist?list=PLLaVu9P3il1isXzX8xk3gsnbkaftZR-8b)
+
+
 
 ## Ideas for Future Improvements
 - Add priority levels
