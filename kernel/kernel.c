@@ -8,14 +8,14 @@
 #include <stdio.h>
 #include "os.h"
 #include "kernel_internal.h"
-#include "../port/arm/cortex_m4/port.h"
+#include "port.h"
 
 static uint32_t scheduler_stack[OS_SCHEDULER_STACK_WORDS] __attribute__((aligned(8)));
-static uint32_t task_count = 1; // idle task always exists
-static uint32_t current_task = 0;		// start with idle task
-static TCB_t user_tasks[OS_MAX_TASKS];
-static uint32_t systick_count = 0;
 static uint32_t idle_task_stack[OS_IDLE_STACK_WORDS] __attribute__((aligned(8)));
+static TCB_t user_tasks[OS_MAX_TASKS];
+static uint32_t task_count = 1; // idle task always exists
+static uint32_t current_task = 0; // start with idle task
+static uint32_t systick_count = 0;
 
 /* os private function prototypes */
 static void init_idle_task(void);
@@ -36,7 +36,7 @@ void os_kernel_start(void)
 	init_idle_task();
 	port_set_pendSV_priority_lowest();
 	port_init_systick(OS_TICK_HZ);
-	os_schedule_next_task();
+	os_schedule_next_task(); // dont call port_yield here bc we are manually starting the first task
 	port_switch_to_psp();
 	user_tasks[current_task].task_handler(); // never returns
 }
@@ -87,6 +87,127 @@ void os_task_delay(uint32_t tick_count)
 	// enable interrupt
 	PORT_INTERRUPT_ENABLE();
 }
+
+os_err_t os_sem_create(semephore_t *sem, uint8_t initial_count, unblock_method_t unblock_method) 
+{
+	if (sem == NULL) return OS_ERR_NULL_PTR;
+	if (initial_count > OS_MAX_TASKS) return OS_ERR_INVALID_SEM_INIT_COUNT;
+	if (unblock_method != FIFO && unblock_method != PRIORITY) return OS_ERR_INVALID_SEM_UNBLOCK_METHOD;
+
+	sem->count = initial_count;
+	sem->wait_count = 0;
+	sem->unblock_method = unblock_method;
+	return OS_OK;
+}
+
+os_err_t os_sem_wait(semephore_t *sem, uint16_t timeout) 
+{
+	if (sem == NULL) return OS_ERR_NULL_PTR;
+
+	PORT_INTERRUPT_DISABLE();
+
+	// check if semaphore is availbe
+	if (sem->count > 0)
+	{
+		// semaphore is available, decrement count and return (the task keeps running)
+		sem->count--;
+		PORT_INTERRUPT_ENABLE();
+		return OS_OK;
+	}
+
+	// semaphore is not available, check if the user wants to block the task
+	if (timeout == 0)
+	{
+		// user dont want to block the task to wait for semaphore, return immediately 
+		PORT_INTERRUPT_ENABLE();
+		return OS_SEM_UNAVAILABLE;
+	}
+
+	// user wants to block the task to wait for the semephore to become available
+	if (sem->wait_count >= OS_MAX_TASKS) // check if there wait_list is full
+	{
+		PORT_INTERRUPT_ENABLE();
+		return OS_ERR_FULL;
+	}
+	user_tasks[current_task].current_state = TASK_BLOCKED;
+	user_tasks[current_task].block_reason = BLOCKED_SEM;
+	user_tasks[current_task].blocked_sem = sem; // save the semaphore pointer in the task's TCB
+	if (timeout == OS_WAIT_FOREVER)
+	{
+		user_tasks[current_task].wakeup_tick = 0;
+	} 
+	else 
+	{
+		user_tasks[current_task].wakeup_tick = systick_count + timeout;
+	}
+	sem->task_wait_list[sem->wait_count] = &user_tasks[current_task]; // add the task to the task wait list
+	sem->wait_count++; // increment blocked_task count
+	PORT_INTERRUPT_ENABLE();
+
+	// schedule for other tasks to run since the current task is blocked
+	port_yield();
+
+	// reaches here after being blocked, either by os_sem_post or timeout has passed, check which it is
+	if (user_tasks[current_task].timeout)
+	{
+		return OS_SEM_UNAVAILABLE; // the task was unblocked due to timeout
+	}
+	return OS_OK; // the task was unblocked due to semaphore being available
+}
+
+os_err_t os_sem_post(semephore_t *sem) 
+{
+	if (sem == NULL) return OS_ERR_NULL_PTR;
+
+	PORT_INTERRUPT_DISABLE();
+	
+	if (sem->wait_count > 0) // there are tasks waiting for the semaphore
+	{
+		// find the index of the task to unblock in the wait list depending on the unblock method
+		int index = -1;
+		if (sem->unblock_method == FIFO)
+		{
+			// FIFO: remove the first task in the wait list
+			index = 0;
+		} 
+		else if (sem->unblock_method == PRIORITY)
+		{
+			// PRIORITY: find the first task with the highest priority 
+			uint8_t highest_priority = 255;
+			for (int i = 0; i < sem->wait_count; i++)
+			{
+				if (sem->task_wait_list[i] != NULL && sem->task_wait_list[i]->priority_level < highest_priority)
+				{
+					highest_priority = sem->task_wait_list[i]->priority_level;
+					index = i;
+				}
+			}
+		}
+		// set the task state to ready and clear its block reason and wakeup tick
+		sem->task_wait_list[index]->current_state = TASK_READY;
+		sem->task_wait_list[index]->block_reason = BLOCKED_NONE;
+		sem->task_wait_list[index]->wakeup_tick = 0;
+		sem->task_wait_list[index]->blocked_sem = NULL; 
+
+		// remove the task from the wait list
+		sem->task_wait_list[index] = NULL;
+
+		// shift the remaining tasks in the wait list to fill the gap
+		for (int i = index; i < sem->wait_count - 1; i++)
+		{
+			sem->task_wait_list[i] = sem->task_wait_list[i + 1];
+		}		
+		sem->wait_count--; 
+	}
+	else // no tasks are waiting for the semaphore, increment the count
+	{
+		sem->count++;
+	}
+	PORT_INTERRUPT_ENABLE();
+	return OS_OK;
+
+}
+
 
 /*----- internal kernel interface (core + port use — not application API) -----*/
 
@@ -171,11 +292,41 @@ static void unblock_tasks(void)
 	for (int i = 1; i < task_count; i++) // ignores the idle task
 	{
 		// wake up any task that has a wakeup deadline(task_delay wake tick or semaphore and mutex timeout) 
-		// if it is blocked and the wakeup tick has been reached, regardless of the block reason
+		// if it is blocked and the wakeup tick has been reached
 		if (user_tasks[i].current_state == TASK_BLOCKED && 
-			user_tasks[i].wakeup_tick != 0 && // no wakeup tick, wait forever, don't unblock
+			user_tasks[i].wakeup_tick != 0 && // wakeup_tick == 0 means no wakeup tick, wait forever, don't unblock
 			(int32_t)(systick_count - user_tasks[i].wakeup_tick) >= 0) // Compare the difference so that it works when systick_count wraps around
 		{
+			// check if the block was blocked by a semaphore, mark timout as true if it is
+			if (user_tasks[i].block_reason == BLOCKED_SEM) 
+			{
+				user_tasks[i].timeout = true;
+				
+				semephore_t *sem = user_tasks[i].blocked_sem;
+				// find the task in the semaphore waitlist and remove it from the semaphore waitlist
+				for (int remove_idx = 0; remove_idx < sem->wait_count; remove_idx++)
+				{
+					if (sem->task_wait_list[remove_idx] == &user_tasks[i])
+					{
+						sem->task_wait_list[remove_idx] = NULL;
+						// shift the remaining tasks in the wait list to fill the gap
+						for (int k = remove_idx; k < sem->wait_count - 1; k++)
+						{
+							sem->task_wait_list[k] = sem->task_wait_list[k + 1];
+						}
+						// set the last task in the wait list to NULL
+						sem->task_wait_list[sem->wait_count - 1] = NULL;
+						// decrement blocked_task count
+						sem->wait_count--; 
+						break;
+					}
+				}
+			}
+			else 
+			{
+				user_tasks[i].timeout = false;
+			}
+
 			user_tasks[i].current_state = TASK_READY;
 			user_tasks[i].block_reason = BLOCKED_NONE;
 			user_tasks[i].wakeup_tick = 0; // reset wakeup tick
