@@ -164,11 +164,11 @@ os_err_t os_sem_post(semephore_t *sem)
 	if (sem->wait_count > 0) // there are tasks waiting for the semaphore
 	{
 		// find the index of the task to unblock in the wait list depending on the unblock method
-		int index = -1;
+		int unblock_idx = -1;
 		if (sem->unblock_method == FIFO)
 		{
 			// FIFO: remove the first task in the wait list
-			index = 0;
+			unblock_idx = 0;
 		} 
 		else if (sem->unblock_method == PRIORITY)
 		{
@@ -179,21 +179,23 @@ os_err_t os_sem_post(semephore_t *sem)
 				if (sem->task_wait_list[i] != NULL && sem->task_wait_list[i]->priority_level < highest_priority)
 				{
 					highest_priority = sem->task_wait_list[i]->priority_level;
-					index = i;
+					unblock_idx = i;
 				}
 			}
 		}
 		// set the task state to ready and clear its block reason and wakeup tick
-		sem->task_wait_list[index]->current_state = TASK_READY;
-		sem->task_wait_list[index]->block_reason = BLOCKED_NONE;
-		sem->task_wait_list[index]->wakeup_tick = 0;
-		sem->task_wait_list[index]->blocked_sem = NULL; 
+		TCB_t *task_to_unblock = sem->task_wait_list[unblock_idx];
+		task_to_unblock->current_state = TASK_READY;
+		task_to_unblock->block_reason = BLOCKED_NONE;
+		task_to_unblock->wakeup_tick = 0;
+		task_to_unblock->blocked_sem = NULL; 
+		task_to_unblock->timeout = false; // reset timeout flag, so wont incorrectly return OS_SEM_UNAVAILABLE if the task is blocked again
 
 		// remove the task from the wait list
-		sem->task_wait_list[index] = NULL;
+		sem->task_wait_list[unblock_idx] = NULL;
 
 		// shift the remaining tasks in the wait list to fill the gap
-		for (int i = index; i < sem->wait_count - 1; i++)
+		for (int i = unblock_idx; i < sem->wait_count - 1; i++)
 		{
 			sem->task_wait_list[i] = sem->task_wait_list[i + 1];
 		}		
