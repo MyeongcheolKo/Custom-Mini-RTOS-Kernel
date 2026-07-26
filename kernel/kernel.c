@@ -242,7 +242,7 @@ void os_schedule_next_task(void)
 		user_tasks[current_task].current_state = TASK_READY;
 	
 	uint8_t task_to_run = IDLE_TASK_IDX; // default to idle task
-	uint16_t highest_priority = OS_PRIORITY_LOWEST + 1; // higher than the lowest priority, so any ready task(even same priority as idle) will be chosen over idle
+	uint8_t highest_priority = OS_PRIORITY_LOWEST + 1; // higher than the lowest priority, so any ready task(even same priority as idle) will be chosen over idle
 	if (task_count <= 1) return;
 	// finds the next task that is ready to run in round robin order with highest priority (lowest priority number)
 	for (int i = current_task + 1; i < task_count; i++) // start after the current task

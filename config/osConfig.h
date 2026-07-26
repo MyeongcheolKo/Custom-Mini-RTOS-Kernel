@@ -11,6 +11,6 @@
 #define OS_MAX_TASKS 20U
 
 #define OS_PRIORITY_HIGHEST 0
-#define OS_PRIORITY_LOWEST 31U
+#define OS_PRIORITY_LOWEST 31U // valid range [0, 254], so idle task wont overflow the priority range when it is set to OS_PRIORITY_LOWEST + 1
 
 #endif
