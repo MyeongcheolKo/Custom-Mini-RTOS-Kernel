@@ -196,13 +196,15 @@ os_err_t os_sem_post(semephore_t *sem)
 
 		// remove the task from the wait list
 		remove_task_from_sem_waitlist(sem, unblock_idx);
+
+		// yield(reschedule) to allow the unblocked task to run if it has higher priority than the current task
+		port_yield();
 	}
 	else // no tasks are waiting for the semaphore, increment the count
 	{
 		sem->count++;
 	}
 	PORT_INTERRUPT_ENABLE();
-	port_yield(); // yield to allow the unblocked task to run if it has higher priority than the current task
 	return OS_OK;
 
 }
