@@ -10,6 +10,8 @@
 #include "kernel_internal.h"
 #include "port.h"
 
+#define IDLE_TASK_IDX 0
+
 static uint32_t scheduler_stack[OS_SCHEDULER_STACK_WORDS] __attribute__((aligned(8)));
 static uint32_t idle_task_stack[OS_IDLE_STACK_WORDS] __attribute__((aligned(8)));
 static TCB_t user_tasks[OS_MAX_TASKS];
@@ -43,15 +45,15 @@ void os_kernel_start(void)
 }
 
 /*
-registers a task with its own private stack; lower priority value = higher priority, valid range 1..OS_PRIORITY_LOWEST (0 is reserved for the idle task)
+registers a task with its own private stack; lower priority value = higher priority, valid range OS_PRIORITY_HIGHEST..OS_PRIORITY_LOWEST
 returns OS_OK, or OS_ERR_MAX_TASKS / OS_ERR_INVALID_PRIORITY / OS_ERR_NULL_PTR on failure
 */
 os_err_t os_task_create(void (*task_handler)(void), uint8_t priority, uint32_t *task_stack_base, uint32_t task_stack_size)
 {
 	if (task_count >= OS_MAX_TASKS)
 		return OS_ERR_MAX_TASKS;
-	if (priority <= OS_PRIORITY_HIGHEST)
-		return OS_ERR_INVALID_PRIORITY; // priority 0 is reserved for idle task
+	if (priority < OS_PRIORITY_HIGHEST || priority > OS_PRIORITY_LOWEST)
+		return OS_ERR_INVALID_PRIORITY;
 	if (task_stack_base == NULL)
 		return OS_ERR_NULL_PTR;
 
@@ -74,7 +76,7 @@ void os_task_delay(uint32_t tick_count)
 	PORT_INTERRUPT_DISABLE();
 
 	// only block the task if it not the idle task
-	if (current_task != 0)
+	if (current_task != IDLE_TASK_IDX)
 	{
 		// set wakeup time for the task
 		user_tasks[current_task].wakeup_tick = systick_count + tick_count;
@@ -174,7 +176,7 @@ os_err_t os_sem_post(semephore_t *sem)
 		else if (sem->unblock_method == PRIORITY)
 		{
 			// PRIORITY: find the first task with the highest priority 
-			uint8_t highest_priority = 255;
+			uint8_t highest_priority = OS_PRIORITY_LOWEST + 1;
 			for (int i = 0; i < sem->wait_count; i++)
 			{
 				if (sem->task_wait_list[i] != NULL && sem->task_wait_list[i]->priority_level < highest_priority)
@@ -237,8 +239,8 @@ void os_schedule_next_task(void)
     if (user_tasks[current_task].current_state == TASK_RUNNING) 
 		user_tasks[current_task].current_state = TASK_READY;
 	
-	uint8_t task_to_run = 0;
-	uint8_t highest_priority = 255;
+	uint8_t task_to_run = IDLE_TASK_IDX; // default to idle task
+	uint16_t highest_priority = OS_PRIORITY_LOWEST + 1; // higher than the lowest priority, so any ready task(even same priority as idle) will be chosen over idle
 	if (task_count <= 1) return;
 	// finds the next task that is ready to run in round robin order with highest priority (lowest priority number)
 	for (int i = current_task + 1; i < task_count; i++) // start after the current task
@@ -258,7 +260,7 @@ void os_schedule_next_task(void)
 		}
 	}
 
-	// task_to_run = 0 when no tasks are free, go idle
+	// task_to_run = IDLE_TASK_IDX when no tasks are free, idle task was excluded from the comparisona above
 	current_task = task_to_run;
 	user_tasks[current_task].current_state = TASK_RUNNING;
 }
@@ -268,9 +270,9 @@ void os_schedule_next_task(void)
 // builds a dummy exception stack frame for idle task
 static void init_idle_task(void)
 {
-	TCB_t *tcb = &user_tasks[0];
+	TCB_t *tcb = &user_tasks[IDLE_TASK_IDX];
 	tcb->task_handler = idle_task_handler;
-	tcb->priority_level = 0; // priority 0 reserved for idle task, highest priority
+	tcb->priority_level = OS_PRIORITY_LOWEST + 1; // set to lowest priority(lower than user defined lowest priority), so idle task only runs when no other tasks are ready
 	tcb->current_state = TASK_READY;
 	tcb->stack_pointer = port_init_task_stack_frame(idle_task_handler, idle_task_stack, sizeof(idle_task_stack));
 }
@@ -306,6 +308,7 @@ static void unblock_tasks(void)
 					if (sem->task_wait_list[remove_idx] == &user_tasks[i])
 					{
 						remove_task_from_sem_waitlist(sem, remove_idx);
+						user_tasks[i].blocked_sem = NULL;
 						break;
 					}
 				}
@@ -324,7 +327,7 @@ static void unblock_tasks(void)
 
 static void remove_task_from_sem_waitlist(semephore_t *sem, uint8_t task_idx)
 {
-	// remove the task from the wait list
+	// remove the task from the wait list (not strictly necessary to set to NULL since we will shift the remaining tasks down, but included to show intent)
 	sem->task_wait_list[task_idx] = NULL;
 
 	// shift the remaining tasks in the wait list to fill the gap

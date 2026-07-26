@@ -53,7 +53,7 @@ typedef struct {
 struct TCB_t {
 	uint32_t stack_pointer;
 	void (*task_handler)(void);
-	uint8_t priority_level; // lower value = higher priority, 0 is reserved for idle task
+	uint8_t priority_level; // lower value = higher priority
 	uint32_t wakeup_tick; // 0 means the task will wait forever
 	task_state_t current_state;
 	task_block_reason_t block_reason;
@@ -67,8 +67,7 @@ static const int OS_WAIT_FOREVER = -1;
 
 // sets scheduler up and starts the kernel, does not return
 void os_kernel_start(void);
-
-// registers a task with its own private stack; lower priority value = higher priority, valid range 1..OS_PRIORITY_LOWEST (0 is reserved for the idle task)
+// registers a task with its own private stack; lower priority value = higher priority, valid range OS_PRIORITY_HIGHEST..OS_PRIORITY_LOWEST
 // returns OS_OK, or OS_ERR_MAX_TASKS / OS_ERR_INVALID_PRIORITY / OS_ERR_NULL_PTR on failure
 os_err_t os_task_create(void (*task_handler)(void), uint8_t priority, uint32_t *task_stack_base, uint32_t task_stack_size);
 
