@@ -52,13 +52,13 @@ typedef struct {
 
 struct TCB_t {
 	uint32_t stack_pointer;
+	void (*task_handler)(void);
+	uint8_t priority_level; // lower value = higher priority, 0 is reserved for idle task
 	uint32_t wakeup_tick; // 0 means the task will wait forever
 	task_state_t current_state;
 	task_block_reason_t block_reason;
-	uint8_t priority_level; // lower value = higher priority, 0 is reserved for idle task
-	void (*task_handler)(void);
-	bool timeout; // true if the task was unblocked due to timeout
 	semephore_t *blocked_sem; // which sem this task is waiting on, NULL if none
+	bool timeout; // true if the task was unblocked due to timeout
 };
 
 static const int OS_WAIT_FOREVER = -1;

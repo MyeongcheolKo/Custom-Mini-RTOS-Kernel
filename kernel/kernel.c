@@ -22,6 +22,7 @@ static void init_idle_task(void);
 static __attribute__((used)) void update_tick_count(void);
 static void unblock_tasks(void);
 static void idle_task_handler(void);
+static void remove_task_from_sem_waitlist(semephore_t *sem, uint8_t task_idx);
 
 /*-------------- public APIs ---------------*/
 
@@ -141,7 +142,7 @@ os_err_t os_sem_wait(semephore_t *sem, uint16_t timeout)
 		user_tasks[current_task].wakeup_tick = systick_count + timeout;
 	}
 	sem->task_wait_list[sem->wait_count] = &user_tasks[current_task]; // add the task to the task wait list
-	sem->wait_count++; // increment blocked_task count
+	sem->wait_count++; // increment wait_task count
 	PORT_INTERRUPT_ENABLE();
 
 	// schedule for other tasks to run since the current task is blocked
@@ -185,27 +186,21 @@ os_err_t os_sem_post(semephore_t *sem)
 		}
 		// set the task state to ready and clear its block reason and wakeup tick
 		TCB_t *task_to_unblock = sem->task_wait_list[unblock_idx];
+		task_to_unblock->wakeup_tick = 0;
 		task_to_unblock->current_state = TASK_READY;
 		task_to_unblock->block_reason = BLOCKED_NONE;
-		task_to_unblock->wakeup_tick = 0;
 		task_to_unblock->blocked_sem = NULL; 
 		task_to_unblock->timeout = false; // reset timeout flag, so wont incorrectly return OS_SEM_UNAVAILABLE if the task is blocked again
 
 		// remove the task from the wait list
-		sem->task_wait_list[unblock_idx] = NULL;
-
-		// shift the remaining tasks in the wait list to fill the gap
-		for (int i = unblock_idx; i < sem->wait_count - 1; i++)
-		{
-			sem->task_wait_list[i] = sem->task_wait_list[i + 1];
-		}		
-		sem->wait_count--; 
+		remove_task_from_sem_waitlist(sem, unblock_idx);
 	}
 	else // no tasks are waiting for the semaphore, increment the count
 	{
 		sem->count++;
 	}
 	PORT_INTERRUPT_ENABLE();
+	port_yield(); // yield to allow the unblocked task to run if it has higher priority than the current task
 	return OS_OK;
 
 }
@@ -310,16 +305,7 @@ static void unblock_tasks(void)
 				{
 					if (sem->task_wait_list[remove_idx] == &user_tasks[i])
 					{
-						sem->task_wait_list[remove_idx] = NULL;
-						// shift the remaining tasks in the wait list to fill the gap
-						for (int k = remove_idx; k < sem->wait_count - 1; k++)
-						{
-							sem->task_wait_list[k] = sem->task_wait_list[k + 1];
-						}
-						// set the last task in the wait list to NULL
-						sem->task_wait_list[sem->wait_count - 1] = NULL;
-						// decrement blocked_task count
-						sem->wait_count--; 
+						remove_task_from_sem_waitlist(sem, remove_idx);
 						break;
 					}
 				}
@@ -334,6 +320,22 @@ static void unblock_tasks(void)
 			user_tasks[i].wakeup_tick = 0; // reset wakeup tick
 		}
 	}
+}
+
+static void remove_task_from_sem_waitlist(semephore_t *sem, uint8_t task_idx)
+{
+	// remove the task from the wait list
+	sem->task_wait_list[task_idx] = NULL;
+
+	// shift the remaining tasks in the wait list to fill the gap
+	for (int i = task_idx; i < sem->wait_count - 1; i++)
+	{
+		sem->task_wait_list[i] = sem->task_wait_list[i + 1];
+	}
+	// set the last task in the wait list to NULL
+	sem->task_wait_list[sem->wait_count - 1] = NULL;
+	// decrement wait_task count
+	sem->wait_count--; 
 }
 
 // the internal used idle task handler called by the scheduler, users should override os_idle_task_hook() instead of this
