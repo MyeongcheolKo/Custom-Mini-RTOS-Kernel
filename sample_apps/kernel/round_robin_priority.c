@@ -29,16 +29,15 @@ when it wakes, proving priority.
 Expected ITM/SWO output (repeats):
 Task schedular initialized
 This is task 3    <- highest priority runs first             [PRIORITY]
-This is task 4    >
-This is task 1    >  equal-priority tasks rotate, none starves [ROUND-ROBIN]
-This is task 2    >
+This is task 4    ->
+This is task 1    ->  equal-priority tasks rotate, none starves [ROUND-ROBIN]
+This is task 2    ->
 This is task 3    <- task3 wakes from its delay and preempts [PRIORITY]
 This is task 4
 This is task 1
 This is task 2
   ...
 
-Reading it:
 - task3 appearing first, and cutting back in every time it wakes, proves
 priority: a priority 1 task always beats the priority 2 tasks when READY.
 - task1, task2 AND task4 all appearing proves round-robin: three equal-
