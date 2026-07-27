@@ -7,23 +7,23 @@ BUILD_DIR = build
 APP ?= sample_apps/kernel/round_robin_priority.c
 
 # header search paths (the selected app's own dir is added so it finds its headers)
-INCLUDES = -I$(dir $(APP)) -Ibsp -Iconfig -Ikernel -Iport/arm/cortex_m4 -Idrivers
+INCLUDES = -I$(dir $(APP)) -Ibsp/STM32F446xx -Iconfig -Ikernel -Iport/arm/cortex_m4 -Idrivers/STM32F446xx
 
 CFLAGS     = -c -mcpu=$(MACH) -mthumb -mfloat-abi=soft -std=gnu11 -Wall -O0 -g $(INCLUDES)
-LDFLAGS    = -mcpu=$(MACH) -mthumb -mfloat-abi=soft --specs=nano.specs  -T bsp/linker_script.ld -Wl,-Map=$(BUILD_DIR)/final.map
+LDFLAGS    = -mcpu=$(MACH) -mthumb -mfloat-abi=soft --specs=nano.specs  -T bsp/STM32F446xx/linker_script.ld -Wl,-Map=$(BUILD_DIR)/final.map
 
 # source groups (one per layer) 
 KERNEL_SRCS = kernel/kernel.c \
               port/arm/cortex_m4/port.c
-DRIVER_SRCS = drivers/GPIO_driver.c \
-              drivers/I2C_driver.c \
-              drivers/SPI_driver.c \
-              drivers/USART_driver.c \
-              drivers/rcc.c
+DRIVER_SRCS = drivers/STM32F446xx/GPIO_driver.c \
+              drivers/STM32F446xx/I2C_driver.c \
+              drivers/STM32F446xx/SPI_driver.c \
+              drivers/STM32F446xx/USART_driver.c \
+              drivers/STM32F446xx/rcc.c
 APP_SRCS    = $(APP)
-BSP_SRCS    = bsp/startup.c \
-              bsp/syscalls.c \
-              bsp/sysmem.c
+BSP_SRCS    = bsp/STM32F446xx/startup.c \
+              bsp/STM32F446xx/syscalls.c \
+              bsp/STM32F446xx/sysmem.c
 
 # src/main.c -> build/src/main.o (mirrors the tree)
 KERNEL_OBJS = $(addprefix $(BUILD_DIR)/,$(KERNEL_SRCS:.c=.o))
