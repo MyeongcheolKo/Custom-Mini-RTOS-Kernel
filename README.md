@@ -1,16 +1,23 @@
 # Custom-Mini-RTOS
 
-A mini RTOS kernel for ARM Cortex-M built from scratch, targeting STM32F446xx. The kernel core is portable C with the architecture-specific code isolated in a port layer, and the project also includes bare-metal infrastructure (linker script, startup code) and a peripheral driver library.
+A mini RTOS kernel built from scratch, with a portable C core and every architecture-specific detail isolated behind a swappable port layer — the kernel contains no assembly and no register access of its own. Developed and tested on ARM Cortex-M4 (STM32F446RE Nucleo), currently the only implemented port. The repo also includes bare-metal infrastructure (linker script, startup code) and a peripheral driver library, both only supporting STM32F446xx today.
 
 ## Table of Contents
 - [Project Structure](#project-structure)
 - [Kernel](#kernel)
+  - [Task Lifecycle](#task-lifecycle)
+  - [Context Switch Flow](#context-switch-flow)
+  - [Semaphores](#semaphores)
+  - [Design Choices](#design-choices)
+  - [API Reference](#api-reference)
+  - [How to Use](#how-to-use)
+  - [Kernel Sample Applications](#kernel-sample-applications)
 - [Peripheral Drivers](#peripheral-drivers)
   - [GPIO Driver](#gpio-driver)
   - [SPI Driver](#spi-driver)
   - [I2C Driver](#i2c-driver)
   - [USART Driver](#usart-driver)
-  - [Sample Applications](#sample-applications)
+  - [Driver Sample Applications](#driver-sample-applications)
 - [Bare-Metal Infrastructure](#bare-metal-infrastructure)
   - [Memory Map](#memory-map)
   - [Linker Script](#linker-script)
@@ -33,60 +40,63 @@ The project is organized into layers, each buildable on its own:
 │   └── port.c/.h              # context switch, SysTick/PendSV setup, critical sections
 ├── config/
 │   └── osConfig.h             # compile-time kernel config (tick rate, stack sizes, ...)
-├── drivers/                   # STM32F446xx peripheral HAL (GPIO, SPI, I2C, USART, RCC)
-├── bsp/                       # board bring-up: startup.c, linker_script.ld, syscalls
+├── drivers/STM32F446xx/       # peripheral HAL (GPIO, SPI, I2C, USART, RCC) — chip-specific
+├── bsp/STM32F446xx/           # board bring-up: startup.c, linker_script.ld, syscalls
 ├── sample_apps/
 │   ├── kernel/                # RTOS demos (round_robin_priority.c, ...)
 │   └── driver/                # peripheral demos (LED_toggle.c, SPI_testing.c, ...)
 └── makefile
 ```
 
-The **kernel** and **drivers** build into independent static libraries (`librtos.a`, `libdrivers.a`) with no dependency on each other — the kernel compiles with zero driver code, and vice versa. Only the `port/` layer is Cortex-M4 specific; the kernel core is portable C.
+The **kernel** and **drivers** build into independent static libraries (`librtos.a`, `libdrivers.a`) with no dependency on each other — the kernel compiles with zero driver code, and vice versa.
+
+Within the kernel, `kernel/` is portable C and `port/` holds everything architecture-specific. `port/arm/cortex_m4/` is the only port implemented today; supporting another architecture means writing a new port against the same interface and changing nothing in `kernel/`. The `drivers/` and `bsp/` layers are chip-specific by nature and would be replaced for a different chip.
 
 # Kernel
 
-A preemptive, priority-based scheduler that manages user tasks plus an idle task, using hardware features of the ARM Cortex-M architecture:
+A preemptive, priority-based scheduler that manages user tasks plus an idle task. The scheduling policy itself is portable C; the hardware mechanisms that drive it are supplied by the port layer, marked *(port)* below:
 
-- **SysTick Timer** — Generates periodic interrupts (1ms ticks) to drive scheduling
-- **PendSV Exception** — Performs the actual context switch at the lowest priority
-- **Dual Stack Pointers** — MSP for kernel/handlers, PSP for user tasks
-- **Priority scheduling** — On each tick the highest-priority `READY` task is selected (lower priority number = higher priority; `0` reserved for the idle task)
+- **SysTick Timer** *(port)* — Generates periodic interrupts (1ms ticks) to drive scheduling
+- **PendSV Exception** *(port)* — Performs the actual context switch at the lowest priority
+- **Dual Stack Pointers** *(port)* — MSP for kernel/handlers, PSP for user tasks
+- **Priority scheduling** — On each tick the highest-priority `READY` task is selected (lower priority number = higher priority). The idle task sits at the lowest priority and is only selected when nothing else is `READY`
+- **Round-robin within a priority level** — Tasks of equal priority take turns instead of the lowest-indexed one always winning, so no task starves its equal-priority peers
+- **Blocking primitives** — Tasks can block on a delay or on a [semaphore](#semaphores), with blocked tasks skipped entirely by the scheduler
 
-The kernel is split into a **portable core** (`kernel/` — scheduling logic, TCB bookkeeping, blocking/tick handling; pure C) and an **architecture port** (`port/arm/cortex_m4/` — context switch, SysTick/PendSV setup, critical sections; all ARM asm and register access). Applications include a single kernel header — `os.h` — which exposes all public-facing APIs (`kernel_internal.h`, the core↔port glue stays in a separate header and user should not include it). Only the `port` needs rewriting to target a different architecture.
+The kernel is split into a **portable core** (`kernel/` — scheduling logic, TCB bookkeeping, blocking/tick handling; pure C) and an **architecture port** (`port/arm/cortex_m4/` — context switch, SysTick/PendSV setup, critical sections; all ARM asm and register access). Only the `port` needs rewriting to target a different architecture.
 ```
-┌─────────────────────────────────────────────────────────┐
-│                      SRAM Layout                        │
-├─────────────────────────────────────────────────────────┤
-│  Scheduler Stack (MSP)    <- Used by exception handlers │
-├─────────────────────────────────────────────────────────┤
-│  Task 1 Private Stack (PSP)                             │
-├─────────────────────────────────────────────────────────┤
-│  Task 2 Private Stack (PSP)                             │
-├─────────────────────────────────────────────────────────┤
-│  Task 3 Private Stack (PSP)                             │
-├─────────────────────────────────────────────────────────┤
-│  Task 4 Private Stack (PSP)                             │
-├─────────────────────────────────────────────────────────┤
-│  Idle Task Stack (PSP)                                  │
-└─────────────────────────────────────────────────────────┘
-How It Works: 
-    ┌──────────┐  os_task_delay()  ┌─────────┐
-    │  READY   │ ----------------> │ BLOCKED │
-    └──────────┘                   └─────────┘
-         |                             |
-         |     wakeup_tick reached     |
-         └──────<───────<────────<─────┘
+          MSP                               PSP
+           │                                 │
+           ▼                                 ▼
+┌──────────────────────┐      ┌──────────────────────────────┐
+│  scheduler_stack[]   │      │  idle_task_stack[]           │  kernel-owned
+│  exception handlers  │      ├──────────────────────────────┤  (static, kernel.c)
+│  (SysTick, PendSV)   │      │  worker_stack[]   (task 1)   │
+└──────────────────────┘      │  logger_stack[]   (task 2)   │  app-owned,
+                              │  ...  up to OS_MAX_TASKS     │  one array per task
+                              └──────────────────────────────┘
+
 ```
 
-### Task Lifecycle
+## Task Lifecycle
 
 - All tasks start in `READY` state
-- When a task calls `os_task_delay(ticks)`, it transitions to `BLOCKED`
-- The scheduler skips blocked tasks and selects the highest-priority `READY` task
+- A task transitions to `BLOCKED` when it calls `os_task_delay(ticks)`, or when it waits on a semaphore that is unavailable
+- Each blocked task records *why* it blocked, and — if the block has a deadline — the `wakeup_tick` it should wake at
+- The scheduler skips blocked tasks and selects the highest-priority `READY` task in round-robin manner
 - Global `systick_count` gets updated at every `SysTick_Handler`
-- When `systick_count` reaches the task's `wakeup_tick`, it becomes `READY` again
+- A blocked task returns to `READY` when its `wakeup_tick` is reached (delay elapsed, or a semaphore wait timed out), or when another task posts the semaphore it was waiting on
 
-### Context Switch Flow
+```
+    ┌──────────┐  os_task_delay() / os_sem_wait()   ┌─────────┐
+    │  READY   │ ---------------------------------> │ BLOCKED │
+    └──────────┘                                    └─────────┘
+         |                                               |
+         | wakeup_tick/timeout reached  /  os_sem_post() |
+         └──────<───────<────────<─────<───────<─────────┘
+```
+
+## Context Switch Flow
 ```
 SysTick fires (every 1ms)
            |
@@ -103,6 +113,32 @@ SysTick fires (every 1ms)
 │    Restore R4-R11    │
 └──────────────────────┘
 ```
+
+## Semaphores
+
+A counting semaphore for task synchronization, created with an *initial count* and an *unblock policy*. Waiting takes the count when it is non-zero; when the count is zero the calling task moves to `BLOCKED`, is appended to that semaphore's own *wait list*, and yields. Posting either releases exactly one waiting task, or — when nobody is waiting — increments the count so a later wait succeeds without blocking.
+
+### Blocking and Timeouts
+
+Every wait carries a timeout in ticks:
+
+| `timeout` | Behavior |
+|-----------|----------|
+| `0` | never blocks, returns immediately with `OS_SEM_UNAVAILABLE` if the count is zero |
+| `> 0` | blocks until posted, or until the timeout expires |
+
+A task released by a post returns `OS_OK`; a task whose timeout expires is unblocked by the tick handler, removed from the wait list, and returns `OS_SEM_UNAVAILABLE`. Since both paths resume the task at the same place, its TCB carries a flag recording which of the two woke it.
+
+### Unblock Policies
+
+Each semaphore chooses how a post picks among multiple waiters:
+
+| Policy | Releases | Tradeoff |
+|--------|----------|----------|
+| `FIFO` | the task that has been waiting longest | fair, no waiter can starve, but a high priority task can sit behind lower priority ones |
+| `PRIORITY` | the highest priority waiter, regardless of arrival order | urgent work goes first, but a steady stream of high priority waiters starves the rest |
+
+The two policies are demonstrated against deliberately identical scenarios in [`sem_post_fifo.c` and `sem_post_priority.c`](#kernel-sample-applications).
 
 ## Design Choices
 
@@ -121,6 +157,144 @@ SysTick fires (every 1ms)
   - `PendSV_Handler`: Need manual control over what gets pushed/popped to the stack and where for context switching + function calls corrupt the EXC_RETURN value in LR
   - `port_init_scheduler_stack`: Modifying MSP itself, prologue/epilogue would use old/new MSP inconsistently
 - **Race condition in `os_task_delay`** - Disabled interrupts while setting `wakeup_tick` and `current_state` to prevent a race condition with `SysTick_Handler`. Without this, SysTick could update `systick_count` between reading it and setting the blocked state, corrupting the task's wake-up deadline. `unblock_tasks` compares the signed difference (`systick_count - wakeup_tick >= 0`) so it also stays correct when the tick counter wraps around.
+
+- **Per-semaphore wait lists** — Each semaphore owns its wait list instead of the kernel keeping one global list of blocked tasks. A post only has to scan the tasks waiting on *that* semaphore, and the unblock policy is a property of the semaphore rather than a kernel-wide setting.
+
+- **Posting yields immediately** — A post can make a higher-priority task `READY`, so it pends a context switch rather than letting the tick handler get to it. Without this the released task would sit `READY` for up to a full tick even though it outranks the task that posted.
+
+## API Reference
+
+Everything below lives in `os.h`, the single header an application includes. See [How to Use](#how-to-use) for a application guides.
+
+### Kernel Control
+
+| Function | Description |
+|----------|-------------|
+| `void os_kernel_start(void)` | Starts the scheduler and dispatches the first task. Call once after every create call - **never returns**. |
+| `void os_idle_task_hook(void)` | Weak symbol called once per idle-loop iteration. Define it in your app to do background work; the kernel's default is empty. |
+
+### Tasks
+
+| Function | Description |
+|----------|-------------|
+| `os_err_t os_task_create(void (*handler)(void), uint8_t priority, uint32_t *stack_base, uint32_t stack_size)` | Registers a task with its own private stack. `priority` must be within `OS_PRIORITY_HIGHEST`..`OS_PRIORITY_LOWEST` (lower value = higher priority); `stack_size` is in **bytes**, and `stack_base` must meet the port's alignment (eg. 8 bytes on Cortex-M). |
+| `void os_task_delay(uint32_t tick_count)` | Blocks the calling task for `tick_count` ticks and yields to the next ready task. |
+
+### Semaphores
+
+| Function | Description |
+|----------|-------------|
+| `os_err_t os_sem_create(semephore_t *sem, uint8_t initial_count, unblock_method_t unblock_method)` | Initializes a semaphore with a starting count and a release policy — `FIFO` or `PRIORITY`, see [Unblock Policies](#unblock-policies). |
+| `os_err_t os_sem_wait(semephore_t *sem, uint16_t timeout)` | Takes the count if non-zero, otherwise blocks for up to `timeout` ticks. `timeout == 0` never blocks. Returns `OS_OK` if acquired, `OS_SEM_UNAVAILABLE` if it gave up. |
+| `os_err_t os_sem_post(semephore_t *sem)` | Releases exactly one waiter (chosen by the unblock policy) and yields so a higher-priority release can run immediately; increments the count instead if nobody is waiting. |
+
+### Types
+
+| Type | Purpose |
+|------|---------|
+| `os_err_t` | Return code for every fallible call — see below |
+| `semephore_t` | A semaphore instance; declare one and pass its address |
+| `unblock_method_t` | `FIFO` or `PRIORITY` |
+
+### Error Codes (`os_err_t`)
+
+| Code | Returned when |
+|------|---------------|
+| `OS_OK` | the call succeeded |
+| `OS_ERR_INVALID_PRIORITY` | priority outside `OS_PRIORITY_HIGHEST`..`OS_PRIORITY_LOWEST` |
+| `OS_ERR_MAX_TASKS` | already holding `OS_MAX_TASKS` tasks |
+| `OS_ERR_NULL_PTR` | a required pointer argument was `NULL` |
+| `OS_ERR_FULL` | the semaphore's wait list is full |
+| `OS_SEM_UNAVAILABLE` | a wait returned without the semaphore — timed out, or `timeout == 0` and the count was zero |
+| `OS_ERR_INVALID_SEM_UNBLOCK_METHOD` | unblock method was neither `FIFO` nor `PRIORITY` |
+| `OS_ERR_INVALID_SEM_INIT_COUNT` | initial semephore count exceeded `OS_MAX_TASKS` |
+
+### User Compile-Time Configuration (`config/osConfig.h`)
+
+| Macro | Default | Controls |
+|-------|---------|----------|
+| `OS_TICK_HZ` | `1000` | scheduler tick rate — defines what one "tick" means in every delay and timeout |
+| `OS_SYSTICK_CLOCK_HZ` | `16000000` | input clock the port uses to program SysTick |
+| `OS_MAX_TASKS` | `20` | size of the task table, and the cap on any semaphore's wait list |
+| `OS_PRIORITY_HIGHEST` / `OS_PRIORITY_LOWEST` | `0` / `31` | valid task priority range |
+| `OS_SCHEDULER_STACK_WORDS` | `256` | MSP stack that exception handlers run on |
+| `OS_IDLE_STACK_WORDS` | `64` | idle task's private stack |
+
+## How to Use
+
+Applications include exactly one kernel header:
+
+```c
+#include "os.h"
+```
+
+That single include brings in the task and semaphore APIs, the `os_err_t` error codes, and the `semephore_t` type. `kernel_internal.h` is the core↔port glue and is not meant to be included by an application.
+
+Every app follows the same shape: give each task a stack, register the tasks, create any synchronization objects, then hand control to the kernel.
+
+```c
+#include "os.h"
+
+// each task owns a private stack, 8 byte aligned as the ARM ABI requires
+uint32_t worker_stack[1024] __attribute__((aligned(8)));
+uint32_t logger_stack[1024] __attribute__((aligned(8)));
+
+semephore_t sem;
+
+void worker_task(void)
+{
+    while (1)                    // a task handler must never return
+    {
+        os_sem_post(&sem);
+        os_task_delay(500);      // BLOCKED for 500 ticks; other tasks run
+    }
+}
+
+void logger_task(void)
+{
+    while (1)
+    {
+        if (os_sem_wait(&sem, 1000) == OS_OK)
+        {
+            // got the semaphore before the 1000 tick timeout
+        }
+    }
+}
+
+int main(void)
+{
+    // lower priority number = higher priority
+    if (os_task_create(worker_task, 1, worker_stack, sizeof(worker_stack)) != OS_OK) { /* handle */ }
+    if (os_task_create(logger_task, 2, logger_stack, sizeof(logger_stack)) != OS_OK) { /* handle */ }
+
+    if (os_sem_create(&sem, 0, FIFO) != OS_OK) { /* handle */ }
+
+    os_kernel_start();           // never returns
+}
+```
+
+Things the API expects of you:
+
+- **Task handlers never return.** Each one is an infinite loop; returning from a task is undefined.
+- **The application owns task stacks.** Declare them as globals and pass the base pointer and `sizeof()` — the kernel does not allocate.
+- **Create everything before starting.** `os_kernel_start()` never returns, so all `os_task_create`, `os_sem_create`, etc calls come first.
+- **Everything returns `os_err_t`.** A creation call rejects an out-of-range priority, a null pointer, or too many tasks rather than failing silently — check the result.
+- **Delays and timeouts are in ticks**, not milliseconds. The tick rate is `OS_TICK_HZ` in `config/osConfig.h` (1000 Hz by default, so one tick is 1 ms).
+- **The idle task is overridable.** Define `os_idle_task_hook()` in your app to run work in the idle loop; the kernel's default is an empty weak symbol.
+- **The stack declaration is the only port-dependent line.** Every `os_*` call above is the same on any port; the `uint32_t` element type and the 8 byte alignment come from the frame the Cortex-M port builds for a new task.
+
+Exact signatures, the full `os_err_t` list, and the tuning knobs live in `os.h` and `config/osConfig.h` — both are short and are the authority. For complete working programs, see [Kernel Sample Applications](#kernel-sample-applications).
+
+## Kernel Sample Applications
+
+The `sample_apps/kernel/` directory contains runnable demos of the scheduler and its primitives. Each one is a standalone firmware image — build with `make APP=<path>` (see [Build System](#build-system-makefile)) and watch the output over [ITM](#itm-debug-output). Every file opens with a comment block explaining the task layout, the expected output, and how to read it.
+
+| Application (`sample_apps/kernel/`) | Demonstrates |
+|-------------|--------------|
+| `round_robin_priority.c` | Priority preemption and round-robin rotation among equal-priority tasks |
+| `sem_timeout.c` | Semaphore waits expiring — nothing ever posts, so every wait times out independently |
+| `sem_post_fifo.c` | A post releasing a blocked waiter, with `FIFO` draining the wait list in arrival order |
+| `sem_post_priority.c` | The same mechanism with `PRIORITY`, draining the wait list by task priority instead |
 
 # Peripheral Drivers
 
@@ -202,9 +376,9 @@ Universal Synchronous/Asynchronous Receiver-Transmitter driver supporting USART1
 - Interrupt-driven communication
 - Error detection (Framing, Noise, Overrun)
 
-## Sample Applications
+## Driver Sample Applications
 
-The `sample_apps/driver/` directory contains working driver examples (kernel demos live in `sample_apps/kernel/`, e.g. `round_robin_priority.c`). Build any of them with `make APP=<path>` (see [Build System](#build-system-makefile)):
+The `sample_apps/driver/` directory contains working driver examples (kernel demos live in `sample_apps/kernel/`, see [Kernel Sample Applications](#kernel-sample-applications)). Build any of them with `make APP=<path>` (see [Build System](#build-system-makefile)):
 
 | Application (`sample_apps/driver/`) | Description |
 |-------------|-------------|
@@ -372,11 +546,12 @@ A plain `make` build (no IDE required). The kernel and drivers compile into inde
 
 ### Selecting the Application
 
-The default app is the kernel round-robin demo. Build any other sample by overriding `APP`:
+The default app is whatever the `APP ?=` line at the top of the makefile points at. Build any other sample by overriding `APP`:
 
 ```
-make                                        # sample_apps/kernel/round_robin_priority.c (default)
-make APP=sample_apps/driver/LED_toggle.c    # a driver sample
+make                                           # the makefile's default app
+make APP=sample_apps/kernel/sem_post_fifo.c    # a kernel sample
+make APP=sample_apps/driver/LED_toggle.c       # a driver sample
 ```
 
 The selected app's own directory is added to the include path automatically.
@@ -416,7 +591,7 @@ Watch the kernel and peripheral driver sample applications in action: [YouTube P
 
 
 ## Ideas for Future Improvements
-- Synchronization primitives — semaphores, mutexes, message queues (each as its own kernel sample app)
+- Remaining synchronization primitives — mutexes (with priority inheritance), message queues (each as its own kernel sample app)
 - Dynamic task creation/deletion
 - Additional ports (Cortex-M0, RISC-V) to exercise the port layer
 - Add stack canaries or MPU protection
