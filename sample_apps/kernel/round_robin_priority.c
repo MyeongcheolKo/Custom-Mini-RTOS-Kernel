@@ -14,7 +14,7 @@ Demonstrates the kernel's two scheduling policies at once:
   - PRIORITY based selection: the highest-priority READY task always runs.
   - ROUND-ROBIN: tasks of equal priority take turns, none starves.
 
-Tasks (created in main; lower number = higher priority, 0 is the idle task):
+Tasks:
   task1, priority 2, prints, then busy_spin()          -> CPU-bound, never blocks
   task2, priority 2, prints, then busy_spin()          -> CPU-bound, never blocks
   task3, priority 1, prints, then os_task_delay(1000)  -> highest priority, sleeps
