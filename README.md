@@ -1,6 +1,6 @@
-# Custom-Mini-RTOS
+# KoRTOS
 
-A mini RTOS kernel built from scratch, with a portable C core and every architecture-specific detail isolated behind a swappable port layer — the kernel contains no assembly and no register access of its own. Developed and tested on ARM Cortex-M4 (STM32F446RE Nucleo), currently the only implemented port. The repo also includes bare-metal infrastructure (linker script, startup code) and a peripheral driver library, both only supporting STM32F446xx today.
+KoRTOS is a mini RTOS kernel built from scratch, with a portable C core and every architecture-specific detail isolated behind a swappable port layer — the kernel contains no assembly and no register access of its own. Developed and tested on ARM Cortex-M4 (STM32F446RE Nucleo), currently the only implemented port. The repo also includes bare-metal infrastructure (linker script, startup code) and a peripheral driver library, both only supporting STM32F446xx today.
 
 ## Table of Contents
 - [Project Structure](#project-structure)
@@ -34,12 +34,12 @@ The project is organized into layers, each buildable on its own:
 .
 ├── kernel/                    # portable RTOS core (pure C, no arch code)
 │   ├── kernel.c               # kernel core: scheduling, tasks, tick, delay
-│   ├── os.h                   # public API — apps include this
+│   ├── kortos.h               # public API — apps include this
 │   └── kernel_internal.h      # core <-> port interface
 ├── port/arm/cortex_m4/        # architecture port (all ARM asm + register access)
 │   └── port.c/.h              # context switch, SysTick/PendSV setup, critical sections
 ├── config/
-│   └── osConfig.h             # compile-time kernel config (tick rate, stack sizes, ...)
+│   └── kortos_config.h        # compile-time kernel config (tick rate, stack sizes, ...)
 ├── drivers/STM32F446xx/       # peripheral HAL (GPIO, SPI, I2C, USART, RCC) — chip-specific
 ├── bsp/STM32F446xx/           # board bring-up: startup.c, linker_script.ld, syscalls
 ├── sample_apps/
@@ -48,7 +48,7 @@ The project is organized into layers, each buildable on its own:
 └── makefile
 ```
 
-The **kernel** and **drivers** build into independent static libraries (`librtos.a`, `libdrivers.a`) with no dependency on each other — the kernel compiles with zero driver code, and vice versa.
+The **kernel** and **drivers** build into independent static libraries (`libkortos.a`, `libdrivers.a`) with no dependency on each other — the kernel compiles with zero driver code, and vice versa.
 
 Within the kernel, `kernel/` is portable C and `port/` holds everything architecture-specific. `port/arm/cortex_m4/` is the only port implemented today; supporting another architecture means writing a new port against the same interface and changing nothing in `kernel/`. The `drivers/` and `bsp/` layers are chip-specific by nature and would be replaced for a different chip.
 
@@ -164,7 +164,7 @@ The two policies are demonstrated against deliberately identical scenarios in [`
 
 ## API Reference
 
-Everything below lives in `os.h`, the single header an application includes. See [How to Use](#how-to-use) for a application guides.
+Everything below lives in `kortos.h`, the single header an application includes. See [How to Use](#how-to-use) for a application guides.
 
 ### Kernel Control
 
@@ -184,16 +184,16 @@ Everything below lives in `os.h`, the single header an application includes. See
 
 | Function | Description |
 |----------|-------------|
-| `os_err_t os_sem_create(semephore_t *sem, uint8_t initial_count, unblock_method_t unblock_method)` | Initializes a semaphore with a starting count and a release policy — `FIFO` or `PRIORITY`, see [Unblock Policies](#unblock-policies). |
-| `os_err_t os_sem_wait(semephore_t *sem, uint16_t timeout)` | Takes the count if non-zero, otherwise blocks for up to `timeout` ticks. `timeout == 0` never blocks. Returns `OS_OK` if acquired, `OS_SEM_UNAVAILABLE` if it gave up. |
-| `os_err_t os_sem_post(semephore_t *sem)` | Releases exactly one waiter (chosen by the unblock policy) and yields so a higher-priority release can run immediately; increments the count instead if nobody is waiting. |
+| `os_err_t os_sem_create(semaphore_t *sem, uint8_t initial_count, unblock_method_t unblock_method)` | Initializes a semaphore with a starting count and a release policy — `FIFO` or `PRIORITY`, see [Unblock Policies](#unblock-policies). |
+| `os_err_t os_sem_wait(semaphore_t *sem, uint16_t timeout)` | Takes the count if non-zero, otherwise blocks for up to `timeout` ticks. `timeout == 0` never blocks. Returns `OS_OK` if acquired, `OS_SEM_UNAVAILABLE` if it gave up. |
+| `os_err_t os_sem_post(semaphore_t *sem)` | Releases exactly one waiter (chosen by the unblock policy) and yields so a higher-priority release can run immediately; increments the count instead if nobody is waiting. |
 
 ### Types
 
 | Type | Purpose |
 |------|---------|
 | `os_err_t` | Return code for every fallible call — see below |
-| `semephore_t` | A semaphore instance; declare one and pass its address |
+| `semaphore_t` | A semaphore instance; declare one and pass its address |
 | `unblock_method_t` | `FIFO` or `PRIORITY` |
 
 ### Error Codes (`os_err_t`)
@@ -207,9 +207,9 @@ Everything below lives in `os.h`, the single header an application includes. See
 | `OS_ERR_FULL` | the semaphore's wait list is full |
 | `OS_SEM_UNAVAILABLE` | a wait returned without the semaphore — timed out, or `timeout == 0` and the count was zero |
 | `OS_ERR_INVALID_SEM_UNBLOCK_METHOD` | unblock method was neither `FIFO` nor `PRIORITY` |
-| `OS_ERR_INVALID_SEM_INIT_COUNT` | initial semephore count exceeded `OS_MAX_TASKS` |
+| `OS_ERR_INVALID_SEM_INIT_COUNT` | initial semaphore count exceeded `OS_MAX_TASKS` |
 
-### User Compile-Time Configuration (`config/osConfig.h`)
+### User Compile-Time Configuration (`config/kortos_config.h`)
 
 | Macro | Default | Controls |
 |-------|---------|----------|
@@ -225,21 +225,21 @@ Everything below lives in `os.h`, the single header an application includes. See
 Applications include exactly one kernel header:
 
 ```c
-#include "os.h"
+#include "kortos.h"
 ```
 
-That single include brings in the task and semaphore APIs, the `os_err_t` error codes, and the `semephore_t` type. `kernel_internal.h` is the core↔port glue and is not meant to be included by an application.
+That single include brings in the task and semaphore APIs, the `os_err_t` error codes, and the `semaphore_t` type. `kernel_internal.h` is the core↔port glue and is not meant to be included by an application.
 
 Every app follows the same shape: give each task a stack, register the tasks, create any synchronization objects, then hand control to the kernel.
 
 ```c
-#include "os.h"
+#include "kortos.h"
 
 // each task owns a private stack, 8 byte aligned as the ARM ABI requires
 uint32_t worker_stack[1024] __attribute__((aligned(8)));
 uint32_t logger_stack[1024] __attribute__((aligned(8)));
 
-semephore_t sem;
+semaphore_t sem;
 
 void worker_task(void)
 {
@@ -279,11 +279,11 @@ Things the API expects of you:
 - **The application owns task stacks.** Declare them as globals and pass the base pointer and `sizeof()` — the kernel does not allocate.
 - **Create everything before starting.** `os_kernel_start()` never returns, so all `os_task_create`, `os_sem_create`, etc calls come first.
 - **Everything returns `os_err_t`.** A creation call rejects an out-of-range priority, a null pointer, or too many tasks rather than failing silently — check the result.
-- **Delays and timeouts are in ticks**, not milliseconds. The tick rate is `OS_TICK_HZ` in `config/osConfig.h` (1000 Hz by default, so one tick is 1 ms).
+- **Delays and timeouts are in ticks**, not milliseconds. The tick rate is `OS_TICK_HZ` in `config/kortos_config.h` (1000 Hz by default, so one tick is 1 ms).
 - **The idle task is overridable.** Define `os_idle_task_hook()` in your app to run work in the idle loop; the kernel's default is an empty weak symbol.
 - **The stack declaration is the only port-dependent line.** Every `os_*` call above is the same on any port; the `uint32_t` element type and the 8 byte alignment come from the frame the Cortex-M port builds for a new task.
 
-Exact signatures, the full `os_err_t` list, and the tuning knobs live in `os.h` and `config/osConfig.h` — both are short and are the authority. For complete working programs, see [Kernel Sample Applications](#kernel-sample-applications).
+Exact signatures, the full `os_err_t` list, and the tuning knobs live in `kortos.h` and `config/kortos_config.h` — both are short and are the authority. For complete working programs, see [Kernel Sample Applications](#kernel-sample-applications).
 
 ## Kernel Sample Applications
 
@@ -539,7 +539,7 @@ A plain `make` build (no IDE required). The kernel and drivers compile into inde
 | Command | Description |
 |---------|-------------|
 | `make` | build the full firmware (`build/final.elf`) |
-| `make kernel` | build only the kernel library (`librtos.a`) — proves it compiles with zero driver dependencies |
+| `make kernel` | build only the kernel library (`libkortos.a`) — proves it compiles with zero driver dependencies |
 | `make drivers` | build only the driver library (`libdrivers.a`) |
 | `make clean` | remove the `build/` directory |
 | `make load` | flash via OpenOCD (use `arm-none-eabi-gdb` to talk to the OpenOCD server) |
@@ -560,10 +560,10 @@ The selected app's own directory is added to the include path automatically.
 
 | Artifact | Built from | Notes |
 |----------|-----------|-------|
-| `build/librtos.a` | `kernel/` + `port/` | the RTOS kernel as a standalone library |
+| `build/libkortos.a` | `kernel/` + `port/` | the RTOS kernel as a standalone library |
 | `build/libdrivers.a` | `drivers/` | the peripheral HAL as a standalone library |
 
-`librtos.a` is force-linked with `--whole-archive` because it holds the `PendSV`/`SysTick` handlers that `startup.c` only weak-aliases (otherwise the linker keeps the weak stubs and context switching silently dies). `libdrivers.a` links on demand — only the drivers the selected app references. The build uses `nano.specs` (Newlib-nano) for a small footprint.
+`libkortos.a` is force-linked with `--whole-archive` because it holds the `PendSV`/`SysTick` handlers that `startup.c` only weak-aliases (otherwise the linker keeps the weak stubs and context switching silently dies). `libdrivers.a` links on demand — only the drivers the selected app references. The build uses `nano.specs` (Newlib-nano) for a small footprint.
 
 ### Output Files
 
@@ -572,7 +572,7 @@ All build artifacts go under `build/` (git-ignored), mirroring the source tree:
 | File | Description |
 |------|-------------|
 | `build/final.elf` | the flashable firmware |
-| `build/librtos.a` / `build/libdrivers.a` | kernel / driver static libraries |
+| `build/libkortos.a` / `build/libdrivers.a` | kernel / driver static libraries |
 | `build/final.map` | linker map (symbol addresses, section sizes) |
 
 ## Debugging

@@ -1,6 +1,6 @@
 #include "port.h"
 #include "kernel_internal.h"
-#include "osConfig.h"
+#include "kortos_config.h"
 
 // dummy stack macros
 #define DUMMY_STACK_XPSR 0x01000000U // only t-bit is needed to set (use Thumb instructions)

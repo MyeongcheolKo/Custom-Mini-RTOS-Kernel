@@ -1,5 +1,5 @@
-#ifndef OS_CONFIG_H_
-#define OS_CONFIG_H_
+#ifndef KORTOS_CONFIG_H_
+#define KORTOS_CONFIG_H_
 
 /* OS configuration parameters */
 #define OS_TICK_HZ 1000U // configurable number of ticks per second for systick timer

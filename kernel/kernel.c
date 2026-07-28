@@ -6,7 +6,7 @@
  */
 #include <stdint.h>
 #include <stdio.h>
-#include "os.h"
+#include "kortos.h"
 #include "kernel_internal.h"
 #include "port.h"
 
@@ -24,7 +24,7 @@ static void init_idle_task(void);
 static __attribute__((used)) void update_tick_count(void);
 static void unblock_tasks(void);
 static void idle_task_handler(void);
-static void remove_task_from_sem_waitlist(semephore_t *sem, uint8_t task_idx);
+static void remove_task_from_sem_waitlist(semaphore_t *sem, uint8_t task_idx);
 
 /*-------------- public APIs ---------------*/
 
@@ -91,7 +91,7 @@ void os_task_delay(uint32_t tick_count)
 	PORT_INTERRUPT_ENABLE();
 }
 
-os_err_t os_sem_create(semephore_t *sem, uint8_t initial_count, unblock_method_t unblock_method) 
+os_err_t os_sem_create(semaphore_t *sem, uint8_t initial_count, unblock_method_t unblock_method) 
 {
 	if (sem == NULL) return OS_ERR_NULL_PTR;
 	if (initial_count > OS_MAX_TASKS) return OS_ERR_INVALID_SEM_INIT_COUNT;
@@ -103,7 +103,7 @@ os_err_t os_sem_create(semephore_t *sem, uint8_t initial_count, unblock_method_t
 	return OS_OK;
 }
 
-os_err_t os_sem_wait(semephore_t *sem, uint16_t timeout) 
+os_err_t os_sem_wait(semaphore_t *sem, uint16_t timeout) 
 {
 	if (sem == NULL) return OS_ERR_NULL_PTR;
 
@@ -126,7 +126,7 @@ os_err_t os_sem_wait(semephore_t *sem, uint16_t timeout)
 		return OS_SEM_UNAVAILABLE;
 	}
 
-	// user wants to block the task to wait for the semephore to become available
+	// user wants to block the task to wait for the semaphore to become available
 	if (sem->wait_count >= OS_MAX_TASKS) // check if there wait_list is full
 	{
 		PORT_INTERRUPT_ENABLE();
@@ -158,7 +158,7 @@ os_err_t os_sem_wait(semephore_t *sem, uint16_t timeout)
 	return OS_OK; // the task was unblocked due to semaphore being available
 }
 
-os_err_t os_sem_post(semephore_t *sem) 
+os_err_t os_sem_post(semaphore_t *sem) 
 {
 	if (sem == NULL) return OS_ERR_NULL_PTR;
 
@@ -303,7 +303,7 @@ static void unblock_tasks(void)
 			{
 				user_tasks[i].timeout = true;
 				
-				semephore_t *sem = user_tasks[i].blocked_sem;
+				semaphore_t *sem = user_tasks[i].blocked_sem;
 				// find the task in the semaphore waitlist and remove it from the semaphore waitlist
 				for (int remove_idx = 0; remove_idx < sem->wait_count; remove_idx++)
 				{
@@ -327,7 +327,7 @@ static void unblock_tasks(void)
 	}
 }
 
-static void remove_task_from_sem_waitlist(semephore_t *sem, uint8_t task_idx)
+static void remove_task_from_sem_waitlist(semaphore_t *sem, uint8_t task_idx)
 {
 	// remove the task from the wait list (not strictly necessary to set to NULL since we will shift the remaining tasks down, but included to show intent)
 	sem->task_wait_list[task_idx] = NULL;

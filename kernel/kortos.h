@@ -1,18 +1,18 @@
 /*
- * os.h
+ * kortos.h
  *
  *  Created on: Dec 23, 2025
  *      Author: krisko
  */
 
-#ifndef OS_H_
-#define OS_H_
+#ifndef KORTOS_H_
+#define KORTOS_H_
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "osConfig.h"
+#include "kortos_config.h"
 
-typedef struct TCB_t TCB_t; // forward declaration of TCB_t so it can be used in semephore_t
+typedef struct TCB_t TCB_t; // forward declaration of TCB_t so it can be used in semaphore_t
 
 typedef enum {
 	OS_OK = 0,
@@ -47,8 +47,8 @@ typedef struct {
 	uint8_t count;
 	TCB_t *task_wait_list[OS_MAX_TASKS];
 	uint8_t wait_count; // number of tasks in the wait list
-	unblock_method_t unblock_method; // the way wait list tasks are scheduled when the semahpore is availabe
-} semephore_t; 
+	unblock_method_t unblock_method; // the way wait list tasks are scheduled when the semaphore is available
+} semaphore_t; 
 
 struct TCB_t {
 	uint32_t stack_pointer;
@@ -57,7 +57,7 @@ struct TCB_t {
 	uint32_t wakeup_tick; // 0 means the task will wait forever
 	task_state_t current_state;
 	task_block_reason_t block_reason;
-	semephore_t *blocked_sem; // which sem this task is waiting on, NULL if none
+	semaphore_t *blocked_sem; // which sem this task is waiting on, NULL if none
 	bool timeout; // true if the task was unblocked due to timeout
 };
 
@@ -75,15 +75,15 @@ os_err_t os_task_create(void (*task_handler)(void), uint8_t priority, uint32_t *
 void os_task_delay(uint32_t tick_count);
 
 // initializes the semaphore passed in with initial_count
-os_err_t os_sem_create(semephore_t *sem, uint8_t initial_count, unblock_method_t unblock_method);
+os_err_t os_sem_create(semaphore_t *sem, uint8_t initial_count, unblock_method_t unblock_method);
 
 // returns OS_OK when the semaphore is available
-os_err_t os_sem_wait(semephore_t *sem, uint16_t timeout);
+os_err_t os_sem_wait(semaphore_t *sem, uint16_t timeout);
 
-os_err_t os_sem_post(semephore_t *sem);
+os_err_t os_sem_post(semaphore_t *sem);
 
 // optional user hook for the idle task, called once per idle loop iteration
 __attribute__((weak)) void os_idle_task_hook(void) { /*default is empty, user can override this function*/ }
 
 
-#endif /* OS_H_ */
+#endif /* KORTOS_H_ */

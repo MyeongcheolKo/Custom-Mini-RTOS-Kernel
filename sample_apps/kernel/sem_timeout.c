@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include "os.h"
+#include "kortos.h"
 
 #if !defined(__SOFT_FP__) && defined(__ARM_FP)
 #warning "FPU is not initialized, but the project is compiling for an FPU. Please initialize the FPU before use."
@@ -78,7 +78,7 @@ uint32_t task1_stack[1024] __attribute__((aligned(8)));
 uint32_t task2_stack[1024] __attribute__((aligned(8)));
 uint32_t task3_stack[1024] __attribute__((aligned(8)));
 
-semephore_t sem;
+semaphore_t sem;
 
 int main(void)
 {

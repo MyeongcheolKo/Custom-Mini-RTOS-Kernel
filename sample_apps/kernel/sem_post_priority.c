@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include "os.h"
+#include "kortos.h"
 
 #if !defined(__SOFT_FP__) && defined(__ARM_FP)
 #warning "FPU is not initialized, but the project is compiling for an FPU. Please initialize the FPU before use."
@@ -59,7 +59,7 @@ Producer: posting semaphore 3 times
 
 - the release order(HIGH, MID, LOW) is the exact reverse of the arrival order 
   (LOW, MID, HIGH), which only a priority scan can produce. Under FIFO this same 
-  app would aquire semephores in the order LOW, MID, HIGH instead, the same order 
+  app would acquire semaphores in the order LOW, MID, HIGH instead, the same order 
   as the arrival order.
 - three posts release exactly three waiters, one each, proving os_sem_post()
   releases a single task per call rather than draining or broadcasting.
@@ -95,7 +95,7 @@ uint32_t consumer_mid_stack[1024] __attribute__((aligned(8)));
 uint32_t consumer_low_stack[1024] __attribute__((aligned(8)));
 uint32_t producer_stack[1024] __attribute__((aligned(8)));
 
-semephore_t sem;
+semaphore_t sem;
 
 int main(void)
 {
