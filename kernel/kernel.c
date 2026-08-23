@@ -150,7 +150,7 @@ os_err_t os_sem_wait(semaphore_t *sem, uint16_t timeout)
 	// schedule for other tasks to run since the current task is blocked
 	port_yield();
 
-	// reaches here after being blocked, either by os_sem_post or timeout has passed, check which it is
+	// reaches here when wakes up after being blocked, determine how it was unblocked
 	if (user_tasks[current_task].timeout)
 	{
 		return OS_SEM_UNAVAILABLE; // the task was unblocked due to timeout
