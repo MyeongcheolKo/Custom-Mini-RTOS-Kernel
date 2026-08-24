@@ -130,8 +130,7 @@ void task1_handler(void)
         {
             // should not get here
             printf("Task 1: semaphore acquired\n");
-            while (1)
-                ;
+            while (1);
         }
     }
 }
@@ -150,8 +149,7 @@ void task2_handler(void)
         {
             // should not get here
             printf("Task 2: semaphore acquired\n");
-            while (1)
-                ;
+            while (1);
         }
     }
 }
@@ -170,16 +168,14 @@ void task3_handler(void)
         {
             // should not get here
             printf("Task 3: semaphore acquired\n");
-            while (1)
-                ;
+            while (1);
         }
     }
 }
 
 void error_hanlder(void)
 {
-    while (1)
-        ;
+    while (1);
 }
 
 void enable_processor_faults(void)
@@ -193,27 +189,23 @@ void enable_processor_faults(void)
 void HardFault_Handler(void)
 {
     printf("hard fault\n");
-    while (1)
-        ;
+    while (1);
 }
 
 void MemManage_Handler(void)
 {
     printf("mem fault\n");
-    while (1)
-        ;
+    while (1);
 }
 
 void BusFault_Handler(void)
 {
     printf("bus fault\n");
-    while (1)
-        ;
+    while (1);
 }
 
 void UsageFault_Handler(void)
 {
     printf("usage fault\n");
-    while (1)
-        ;
+    while (1);
 }
