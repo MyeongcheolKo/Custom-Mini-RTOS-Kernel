@@ -60,7 +60,8 @@ os_err_t os_task_create(void (*task_handler)(void), uint8_t priority, uint32_t *
 		
 	TCB_t *tcb = &user_tasks[task_count];
 	tcb->task_handler = task_handler;
-	tcb->priority_level = priority;
+	tcb->base_priority = priority;
+	tcb->effective_priority = priority;
 	tcb->current_state = TASK_READY;
 	tcb->stack_pointer = port_init_task_stack_frame(task_handler, task_stack_base, task_stack_size);
 	// no need to set block_reason bc it is zero initialized and BLOCKED_NONE is 0
@@ -178,9 +179,9 @@ os_err_t os_sem_post(semaphore_t *sem)
 			uint8_t highest_priority = OS_PRIORITY_LOWEST + 1;
 			for (int i = 0; i < sem->wait_count; i++)
 			{
-				if (sem->task_wait_list[i] != NULL && sem->task_wait_list[i]->priority_level < highest_priority)
+				if (sem->task_wait_list[i] != NULL && sem->task_wait_list[i]->effective_priority < highest_priority)
 				{
-					highest_priority = sem->task_wait_list[i]->priority_level;
+					highest_priority = sem->task_wait_list[i]->effective_priority;
 					unblock_idx = i;
 				}
 			}
@@ -205,7 +206,6 @@ os_err_t os_sem_post(semaphore_t *sem)
 	}
 	port_exit_critical(prev_int_state);
 	return OS_OK;
-
 }
 
 
@@ -246,17 +246,17 @@ void os_schedule_next_task(void)
 	// finds the next task that is ready to run in round robin order with highest priority (lowest priority number)
 	for (int i = current_task + 1; i < task_count; i++) // start after the current task
 	{
-		if (user_tasks[i].current_state == TASK_READY && user_tasks[i].priority_level < highest_priority)
+		if (user_tasks[i].current_state == TASK_READY && user_tasks[i].effective_priority < highest_priority)
 		{
-			highest_priority = user_tasks[i].priority_level;
+			highest_priority = user_tasks[i].effective_priority;
 			task_to_run = i;
 		}
 	}
 	for (int i = 1; i <= current_task; i++) // reaches the current task last so it only runs if no other tasks with higher priority are ready, therefor round robin
 	{
-		if (user_tasks[i].current_state == TASK_READY && user_tasks[i].priority_level < highest_priority)
+		if (user_tasks[i].current_state == TASK_READY && user_tasks[i].effective_priority < highest_priority)
 		{
-			highest_priority = user_tasks[i].priority_level;
+			highest_priority = user_tasks[i].effective_priority;
 			task_to_run = i;
 		}
 	}
@@ -273,7 +273,8 @@ static void init_idle_task(void)
 {
 	TCB_t *tcb = &user_tasks[IDLE_TASK_IDX];
 	tcb->task_handler = idle_task_handler;
-	tcb->priority_level = OS_PRIORITY_LOWEST + 1; // set to lowest priority(lower than user defined lowest priority), so idle task only runs when no other tasks are ready
+	tcb->base_priority = OS_PRIORITY_LOWEST + 1; // set to lowest priority(lower than user defined lowest priority), so idle task only runs when no other tasks are ready
+	tcb->effective_priority = OS_PRIORITY_LOWEST + 1;
 	tcb->current_state = TASK_READY;
 	tcb->stack_pointer = port_init_task_stack_frame(idle_task_handler, idle_task_stack, sizeof(idle_task_stack));
 }

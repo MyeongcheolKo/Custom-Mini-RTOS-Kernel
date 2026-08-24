@@ -53,7 +53,8 @@ typedef struct {
 struct TCB_t {
 	uint32_t stack_pointer;
 	void (*task_handler)(void);
-	uint8_t priority_level; // lower value = higher priority
+	uint8_t base_priority; // lower value = higher priority, user defined and does not change after task creation
+	uint8_t effective_priority; // lower value = higher priority, can be changed by mutex priority inheritance
 	uint32_t wakeup_tick; // 0 means the task will wait forever
 	task_state_t current_state;
 	task_block_reason_t block_reason;
