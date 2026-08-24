@@ -72,8 +72,7 @@ os_err_t os_task_create(void (*task_handler)(void), uint8_t priority, uint32_t *
 // blocks the current task for tick_count ticks and yields to the next ready task
 void os_task_delay(uint32_t tick_count)
 {
-	// disable interrupt
-	PORT_INTERRUPT_DISABLE();
+	uint32_t prev_int_state = port_enter_critical();
 
 	// only block the task if it not the idle task
 	if (current_task != IDLE_TASK_IDX)
@@ -88,7 +87,7 @@ void os_task_delay(uint32_t tick_count)
 	}
 
 	// enable interrupt
-	PORT_INTERRUPT_ENABLE();
+	port_exit_critical(prev_int_state);
 }
 
 os_err_t os_sem_create(semaphore_t *sem, uint8_t initial_count, unblock_method_t unblock_method) 
@@ -107,14 +106,14 @@ os_err_t os_sem_wait(semaphore_t *sem, uint16_t timeout)
 {
 	if (sem == NULL) return OS_ERR_NULL_PTR;
 
-	PORT_INTERRUPT_DISABLE();
+	uint32_t prev_int_state = port_enter_critical();
 
 	// check if semaphore is availbe
 	if (sem->count > 0)
 	{
 		// semaphore is available, decrement count and return (the task keeps running)
 		sem->count--;
-		PORT_INTERRUPT_ENABLE();
+		port_exit_critical(prev_int_state);
 		return OS_OK;
 	}
 
@@ -122,14 +121,14 @@ os_err_t os_sem_wait(semaphore_t *sem, uint16_t timeout)
 	if (timeout == 0)
 	{
 		// user dont want to block the task to wait for semaphore, return immediately 
-		PORT_INTERRUPT_ENABLE();
+		port_exit_critical(prev_int_state);
 		return OS_SEM_UNAVAILABLE;
 	}
 
 	// user wants to block the task to wait for the semaphore to become available
 	if (sem->wait_count >= OS_MAX_TASKS) // check if there wait_list is full
 	{
-		PORT_INTERRUPT_ENABLE();
+		port_exit_critical(prev_int_state);
 		return OS_ERR_FULL;
 	}
 	user_tasks[current_task].current_state = TASK_BLOCKED;
@@ -145,7 +144,7 @@ os_err_t os_sem_wait(semaphore_t *sem, uint16_t timeout)
 	}
 	sem->task_wait_list[sem->wait_count] = &user_tasks[current_task]; // add the task to the task wait list
 	sem->wait_count++; // increment wait_task count
-	PORT_INTERRUPT_ENABLE();
+	port_exit_critical(prev_int_state);
 
 	// schedule for other tasks to run since the current task is blocked
 	port_yield();
@@ -162,7 +161,7 @@ os_err_t os_sem_post(semaphore_t *sem)
 {
 	if (sem == NULL) return OS_ERR_NULL_PTR;
 
-	PORT_INTERRUPT_DISABLE();
+	uint32_t prev_int_state = port_enter_critical();
 	
 	if (sem->wait_count > 0) // there are tasks waiting for the semaphore
 	{
@@ -204,7 +203,7 @@ os_err_t os_sem_post(semaphore_t *sem)
 	{
 		sem->count++;
 	}
-	PORT_INTERRUPT_ENABLE();
+	port_exit_critical(prev_int_state);
 	return OS_OK;
 
 }

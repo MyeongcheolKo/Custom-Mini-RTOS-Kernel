@@ -2,13 +2,15 @@
 #define OS_PORT_H_
 #include <stdint.h>
 
-// critical section
-#define PORT_INTERRUPT_DISABLE() do{ __asm volatile("MOV R0,#0x1"); __asm volatile("MSR PRIMASK,R0"); } while(0)
-#define PORT_INTERRUPT_ENABLE()  do{ __asm volatile("MOV R0,#0x0"); __asm volatile("MSR PRIMASK,R0"); } while(0)
-
 #define PORT_WAIT_FOR_INTERRUPT() do{ __asm volatile("WFI"); } while(0)
 
 /* arch services the kernel core calls */
+
+// Enter critical section, disable interrupts and return the previous interrupt state (0 = enabled, 1 = disabled)
+uint32_t port_enter_critical(void);
+
+// Exit critical section, restore interrupts to the previous state (0 = enabled, 1 = disabled)
+void port_exit_critical(uint32_t prev_primask);
 
 // sets MSP to the top of the scheduler stack where all the handlers run
 __attribute__((naked)) void port_init_scheduler_stack(uint32_t scheduler_top_of_stack);

@@ -6,6 +6,25 @@
 #define DUMMY_STACK_XPSR 0x01000000U // only t-bit is needed to set (use Thumb instructions)
 #define EXC_RETURN_THREAD_PSP 0xFFFFFFFD
 
+// static function prototypes
+static uint32_t get_primask(void);
+static void set_primask(uint32_t state);
+static void disable_interrupts(void);
+
+// Enter critical section, disable interrupts and return the previous interrupt state (0 = enabled, 1 = disabled)
+uint32_t port_enter_critical(void) 
+{
+	uint32_t prev_primask = get_primask();
+	disable_interrupts(); // disable interrupts no matter if the current state is disabled or enabled
+	return prev_primask;
+}
+
+// Exit critical section, restore interrupts to the previous state (0 = enabled, 1 = disabled)
+void port_exit_critical(uint32_t prev_primask)
+{
+	set_primask(prev_primask); // restore interrupts to whatever state they were in before entering critical section
+}
+
 // sets MSP to the top of the scheduler stack where all the handlers run
 __attribute__((naked)) void port_init_scheduler_stack(uint32_t scheduler_top_of_stack)
 {
@@ -167,4 +186,29 @@ __attribute__((naked)) void PendSV_Handler(void)
 
 	// performs the exception return, and hardware pops SF1 (including PC) from the newly selected task's PSP
 	__asm volatile("BX LR");
+}
+
+/*--------------static functions--------------*/
+
+static uint32_t get_primask(void) 
+{
+	uint32_t state;
+	// MRS: move to register from special register
+	// output "=r" (state): value of PRIMASK is stored in state
+	__asm volatile("MRS %0, PRIMASK" : "=r" (state));
+	return state;
+}
+static void set_primask(uint32_t state) 
+{
+	// MSR: move to special register from register
+	// input "r" (state): value of state is moved to PRIMASK
+	__asm volatile("MSR PRIMASK, %0" : : "r" (state)); 
+}
+
+static void disable_interrupts(void) 
+{
+	// CPSID: change processor state, interrupts disable
+	// I: IRQ
+	// "memory" clobber: tells compiler that memory may change, preventing optimizations that could lead to incorrect behavior
+	__asm volatile("CPSID I" : : : "memory");
 }
