@@ -19,12 +19,17 @@ static uint32_t task_count = 1; // idle task always exists
 static uint32_t current_task = 0; // start with idle task
 static uint32_t systick_count = 0;
 
-/* os private function prototypes */
+/* -------------- os private function prototypes -------------- */
 static void init_idle_task(void);
 static __attribute__((used)) void update_tick_count(void);
 static void unblock_tasks(void);
 static void idle_task_handler(void);
-static void remove_task_from_sem_waitlist(semaphore_t *sem, uint8_t task_idx);
+
+static os_err_t waitlist_block_current(waitlist_t *waitlist, uint32_t timeout, task_block_reason_t block_reason, uint32_t prev_int_state);
+
+static TCB_t *waitlist_unblock(waitlist_t *waitlist);
+
+static void waitlist_remove_task(waitlist_t *waitlist, uint8_t task_idx);
 
 /*-------------- public APIs ---------------*/
 
@@ -91,15 +96,15 @@ void os_task_delay(uint32_t tick_count)
 	port_exit_critical(prev_int_state);
 }
 
-os_err_t os_sem_create(semaphore_t *sem, uint8_t initial_count, unblock_method_t unblock_method) 
+os_err_t os_sem_create(semaphore_t *sem, uint8_t initial_count, schedule_policy_t schedule_policy) 
 {
 	if (sem == NULL) return OS_ERR_NULL_PTR;
 	if (initial_count > OS_MAX_TASKS) return OS_ERR_INVALID_SEM_INIT_COUNT;
-	if (unblock_method != FIFO && unblock_method != PRIORITY) return OS_ERR_INVALID_SEM_UNBLOCK_METHOD;
+	if (schedule_policy != FIFO && schedule_policy != PRIORITY) return OS_ERR_INVALID_SEM_UNBLOCK_METHOD;
 
 	sem->count = initial_count;
-	sem->wait_count = 0;
-	sem->unblock_method = unblock_method;
+	sem->waitlist.wait_count = 0;
+	sem->waitlist.schedule_policy = schedule_policy;
 	return OS_OK;
 }
 
@@ -126,31 +131,14 @@ os_err_t os_sem_wait(semaphore_t *sem, uint16_t timeout)
 		return OS_SEM_UNAVAILABLE;
 	}
 
-	// user wants to block the task to wait for the semaphore to become available
-	if (sem->wait_count >= OS_MAX_TASKS) // check if there wait_list is full
+	// block the current task and add it to the semaphore's wait list
+	os_err_t block_result = waitlist_block_current(&sem->waitlist, timeout, BLOCKED_SEM, prev_int_state);
+	if (block_result != OS_OK)
 	{
-		port_exit_critical(prev_int_state);
-		return OS_ERR_FULL;
+		return block_result; // return the error that occured while trying to block the task
 	}
-	user_tasks[current_task].current_state = TASK_BLOCKED;
-	user_tasks[current_task].block_reason = BLOCKED_SEM;
-	user_tasks[current_task].blocked_sem = sem; // save the semaphore pointer in the task's TCB
-	if (timeout == OS_WAIT_FOREVER)
-	{
-		user_tasks[current_task].wakeup_tick = 0;
-	} 
-	else 
-	{
-		user_tasks[current_task].wakeup_tick = systick_count + timeout;
-	}
-	sem->task_wait_list[sem->wait_count] = &user_tasks[current_task]; // add the task to the task wait list
-	sem->wait_count++; // increment wait_task count
-	port_exit_critical(prev_int_state);
 
-	// schedule for other tasks to run since the current task is blocked
-	port_yield();
-
-	// reaches here when wakes up after being blocked, determine how it was unblocked
+	// reaches here when the task was blocked successfully and wakes up after being blocked, determine how it was unblocked
 	if (user_tasks[current_task].timeout)
 	{
 		return OS_SEM_UNAVAILABLE; // the task was unblocked due to timeout
@@ -164,52 +152,22 @@ os_err_t os_sem_post(semaphore_t *sem)
 
 	uint32_t prev_int_state = port_enter_critical();
 	
-	if (sem->wait_count > 0) // there are tasks waiting for the semaphore
+	// attempt tounblock the next task in the wait list based on the unblock policy
+	if (waitlist_unblock(&sem->waitlist) != NULL) 
 	{
-		// find the index of the task to unblock in the wait list depending on the unblock method
-		int unblock_idx = -1;
-		if (sem->unblock_method == FIFO)
-		{
-			// FIFO: remove the first task in the wait list
-			unblock_idx = 0;
-		} 
-		else if (sem->unblock_method == PRIORITY)
-		{
-			// PRIORITY: find the first task with the highest priority 
-			uint8_t highest_priority = OS_PRIORITY_LOWEST + 1;
-			for (int i = 0; i < sem->wait_count; i++)
-			{
-				if (sem->task_wait_list[i] != NULL && sem->task_wait_list[i]->effective_priority < highest_priority)
-				{
-					highest_priority = sem->task_wait_list[i]->effective_priority;
-					unblock_idx = i;
-				}
-			}
-		}
-		// set the task state to ready and clear its block reason and wakeup tick
-		TCB_t *task_to_unblock = sem->task_wait_list[unblock_idx];
-		task_to_unblock->wakeup_tick = 0;
-		task_to_unblock->current_state = TASK_READY;
-		task_to_unblock->block_reason = BLOCKED_NONE;
-		task_to_unblock->blocked_sem = NULL; 
-		task_to_unblock->timeout = false; // reset timeout flag, so wont incorrectly return OS_SEM_UNAVAILABLE if the task is blocked again
-
-		// remove the task from the wait list
-		remove_task_from_sem_waitlist(sem, unblock_idx);
-
-		// yield(reschedule) to allow the unblocked task to run if it has higher priority than the current task
+		// a task is unblocked yield to allow the unblocked task to run if it has higher priority than the current task
 		port_yield();
 	}
-	else // no tasks are waiting for the semaphore, increment the count
+	else // no tasks to unblock, increment the semaphore count
 	{
 		sem->count++;
 	}
+
 	port_exit_critical(prev_int_state);
 	return OS_OK;
 }
 
-
-/*----- internal kernel interface (core + port use — not application API) -----*/
+/*------------- internal kernel interface (core + port use — not application API) --------------*/
 
 // called by SysTick_Handler to update tick count, unblock tasks, and pend PendSV
 void os_tick(void)
@@ -298,24 +256,24 @@ static void unblock_tasks(void)
 			user_tasks[i].wakeup_tick != 0 && // wakeup_tick == 0 means no wakeup tick, wait forever, don't unblock
 			(int32_t)(systick_count - user_tasks[i].wakeup_tick) >= 0) // Compare the difference so that it works when systick_count wraps around
 		{
-			// check if the block was blocked by a semaphore, mark timout as true if it is
-			if (user_tasks[i].block_reason == BLOCKED_SEM) 
+			// check if the block was blocked on a primitive
+			if (user_tasks[i].blocked_waitlist != NULL)
 			{
 				user_tasks[i].timeout = true;
 				
-				semaphore_t *sem = user_tasks[i].blocked_sem;
-				// find the task in the semaphore waitlist and remove it from the semaphore waitlist
-				for (int remove_idx = 0; remove_idx < sem->wait_count; remove_idx++)
+				// find the task in the waitlist and remove it from the waitlist
+				waitlist_t *waitlist = user_tasks[i].blocked_waitlist;
+				for (int remove_idx = 0; remove_idx < waitlist->wait_count; remove_idx++)
 				{
-					if (sem->task_wait_list[remove_idx] == &user_tasks[i])
+					if (waitlist->task_waitlist[remove_idx] == &user_tasks[i])
 					{
-						remove_task_from_sem_waitlist(sem, remove_idx);
-						user_tasks[i].blocked_sem = NULL;
+						waitlist_remove_task(waitlist, remove_idx);
+						user_tasks[i].blocked_waitlist = NULL;
 						break;
 					}
 				}
 			}
-			else 
+			else // task wasblocked by task_delay
 			{
 				user_tasks[i].timeout = false;
 			}
@@ -327,20 +285,99 @@ static void unblock_tasks(void)
 	}
 }
 
-static void remove_task_from_sem_waitlist(semaphore_t *sem, uint8_t task_idx)
+// blocks the current task for timeout ticks and add to waitlist, exits critical
+// section with prev_int_state and yield to allow other tasks to run
+static os_err_t waitlist_block_current(waitlist_t *waitlist, uint32_t timeout, task_block_reason_t block_reason, uint32_t prev_int_state)
+{
+	// check if the waitlist is full
+	if (waitlist->wait_count >= OS_MAX_TASKS)
+	{
+		port_exit_critical(prev_int_state);
+		return OS_ERR_FULL;
+	}
+
+	// block the task
+	user_tasks[current_task].current_state = TASK_BLOCKED;
+	user_tasks[current_task].block_reason = block_reason;
+	user_tasks[current_task].blocked_waitlist = waitlist; // save the waitlist pointer in the task's TCB
+	user_tasks[current_task].wakeup_tick = (timeout == OS_WAIT_FOREVER) ? 0 : systick_count + timeout;
+
+	// add the task to the wait list
+	waitlist->task_waitlist[waitlist->wait_count] = &user_tasks[current_task];
+	waitlist->wait_count++; 
+
+	port_exit_critical(prev_int_state);
+	
+	// schedule for other tasks to run since the current task is blocked
+	port_yield();
+
+	// resumes here when wakes up after being blocked, caller should determine how 
+	// it was unblocked by checking user_tasks[current_task].timeout
+	return OS_OK;
+}
+
+// wakes the next task from waitlist based on its schedule policy, clears its blocked
+// state, and removes it from the waitlist; returns NULL if waitlist is empty
+static TCB_t *waitlist_unblock(waitlist_t *waitlist)
+{
+	if (waitlist->wait_count == 0)
+	{
+		return NULL; // no tasks to unblock
+	}
+
+	// find the index of the task to unblock in the wait list depending on the unblock method
+	int unblock_idx = -1;
+	if (waitlist->schedule_policy == FIFO)
+	{
+		// FIFO: remove the first task in the wait list
+		unblock_idx = 0;
+	} 
+	else if (waitlist->schedule_policy == PRIORITY)
+	{
+		// PRIORITY: find the first task with the highest priority 
+		uint8_t highest_priority = OS_PRIORITY_LOWEST + 1;
+		for (int i = 0; i < waitlist->wait_count; i++)
+		{
+			if (waitlist->task_waitlist[i] != NULL && waitlist->task_waitlist[i]->effective_priority < highest_priority)
+			{
+				highest_priority = waitlist->task_waitlist[i]->effective_priority;
+				unblock_idx = i;
+			}
+		}
+	}
+	
+	// set the task state to ready and clear its block reason and wakeup tick
+	TCB_t *task_to_unblock = waitlist->task_waitlist[unblock_idx];
+	task_to_unblock->wakeup_tick = 0;
+	task_to_unblock->current_state = TASK_READY;
+	task_to_unblock->block_reason = BLOCKED_NONE;
+	task_to_unblock->blocked_waitlist = NULL; 
+	task_to_unblock->timeout = false; // reset timeout flag, so wont incorrectly return OS_SEM_UNAVAILABLE if the task is blocked again
+
+	// remove the task from the wait list
+	waitlist_remove_task(waitlist, unblock_idx);
+
+	return task_to_unblock;
+}
+
+
+// removes the task at task_idx from waitlist, shifting the remaining entries down to fill the gap
+static void waitlist_remove_task(waitlist_t *waitlist, uint8_t task_idx)
 {
 	// remove the task from the wait list (not strictly necessary to set to NULL since we will shift the remaining tasks down, but included to show intent)
-	sem->task_wait_list[task_idx] = NULL;
+	waitlist->task_waitlist[task_idx] = NULL;
 
 	// shift the remaining tasks in the wait list to fill the gap
-	for (int i = task_idx; i < sem->wait_count - 1; i++)
+	for (int i = task_idx; i < waitlist->wait_count - 1; i++)
 	{
-		sem->task_wait_list[i] = sem->task_wait_list[i + 1];
+		waitlist->task_waitlist[i] = waitlist->task_waitlist[i + 1];
 	}
+
 	// set the last task in the wait list to NULL
-	sem->task_wait_list[sem->wait_count - 1] = NULL;
+	waitlist->task_waitlist[waitlist->wait_count - 1] = NULL;
+
 	// decrement wait_task count
-	sem->wait_count--; 
+	waitlist->wait_count--; 
 }
 
 // the internal used idle task handler called by the scheduler, users should override os_idle_task_hook() instead of this
