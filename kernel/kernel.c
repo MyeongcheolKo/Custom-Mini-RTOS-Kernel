@@ -24,11 +24,9 @@ static void init_idle_task(void);
 static __attribute__((used)) void update_tick_count(void);
 static void unblock_tasks(void);
 static void idle_task_handler(void);
-
+static void waitlist_init(waitlist_t *waitlist, schedule_policy_t schedule_policy);
 static os_err_t waitlist_block_current(waitlist_t *waitlist, uint32_t timeout, task_block_reason_t block_reason, uint32_t prev_int_state);
-
 static TCB_t *waitlist_unblock(waitlist_t *waitlist);
-
 static void waitlist_remove_task(waitlist_t *waitlist, uint8_t task_idx);
 
 /*-------------- public APIs ---------------*/
@@ -64,12 +62,15 @@ os_err_t os_task_create(void (*task_handler)(void), uint8_t priority, uint32_t *
 
 		
 	TCB_t *tcb = &user_tasks[task_count];
+	tcb->stack_pointer = port_init_task_stack_frame(task_handler, task_stack_base, task_stack_size);
 	tcb->task_handler = task_handler;
+	tcb->current_state = TASK_READY;
 	tcb->base_priority = priority;
 	tcb->effective_priority = priority;
-	tcb->current_state = TASK_READY;
-	tcb->stack_pointer = port_init_task_stack_frame(task_handler, task_stack_base, task_stack_size);
-	// no need to set block_reason bc it is zero initialized and BLOCKED_NONE is 0
+	tcb->wakeup_tick = 0; // value dont matter here since task is not blocked
+	tcb->block_reason = BLOCKED_NONE;
+	tcb->blocked_waitlist = NULL;
+	tcb->timeout = false;
 	
 	task_count++;
 	return OS_OK;
@@ -101,10 +102,9 @@ os_err_t os_sem_create(semaphore_t *sem, uint8_t initial_count, schedule_policy_
 	if (sem == NULL) return OS_ERR_NULL_PTR;
 	if (initial_count > OS_MAX_TASKS) return OS_ERR_INVALID_SEM_INIT_COUNT;
 	if (schedule_policy != FIFO && schedule_policy != PRIORITY) return OS_ERR_INVALID_SEM_UNBLOCK_METHOD;
-
+	
 	sem->count = initial_count;
-	sem->waitlist.wait_count = 0;
-	sem->waitlist.schedule_policy = schedule_policy;
+	waitlist_init(&sem->waitlist, schedule_policy);
 	return OS_OK;
 }
 
@@ -167,7 +167,7 @@ os_err_t os_sem_post(semaphore_t *sem)
 	return OS_OK;
 }
 
-/*------------- internal kernel interface (core + port use — not application API) --------------*/
+/*------------- internal kernel interface (core + port use, not application API) --------------*/
 
 // called by SysTick_Handler to update tick count, unblock tasks, and pend PendSV
 void os_tick(void)
@@ -230,11 +230,15 @@ void os_schedule_next_task(void)
 static void init_idle_task(void)
 {
 	TCB_t *tcb = &user_tasks[IDLE_TASK_IDX];
+	tcb->stack_pointer = port_init_task_stack_frame(idle_task_handler, idle_task_stack, sizeof(idle_task_stack));
 	tcb->task_handler = idle_task_handler;
+	tcb->current_state = TASK_READY;
 	tcb->base_priority = OS_PRIORITY_LOWEST + 1; // set to lowest priority(lower than user defined lowest priority), so idle task only runs when no other tasks are ready
 	tcb->effective_priority = OS_PRIORITY_LOWEST + 1;
-	tcb->current_state = TASK_READY;
-	tcb->stack_pointer = port_init_task_stack_frame(idle_task_handler, idle_task_stack, sizeof(idle_task_stack));
+	tcb->wakeup_tick = 0; // value dont matter here since task is not blocked
+	tcb->block_reason = BLOCKED_NONE;
+	tcb->blocked_waitlist = NULL;
+	tcb->timeout = false;
 }
 
 // increments the tick counter on every SysTick interrupt
@@ -283,6 +287,17 @@ static void unblock_tasks(void)
 			user_tasks[i].wakeup_tick = 0; // reset wakeup tick
 		}
 	}
+}
+
+// initializes the waitlist with the specified scheduling policy
+static void waitlist_init(waitlist_t *waitlist, schedule_policy_t schedule_policy)
+{
+	for (int i = 0; i < OS_MAX_TASKS; i++)
+	{
+		waitlist->task_waitlist[i] = NULL;
+	}
+	waitlist->wait_count = 0;
+	waitlist->schedule_policy = schedule_policy;
 }
 
 // blocks the current task for timeout ticks and add to waitlist, exits critical

@@ -49,22 +49,22 @@ typedef struct {
 	schedule_policy_t schedule_policy; // the policy used to schedule wait list tasks
 } waitlist_t;
 
-typedef struct {
-	uint8_t count;
-	waitlist_t waitlist;
-} semaphore_t;
-
 struct TCB_t {
 	uint32_t stack_pointer;
 	void (*task_handler)(void);
+	task_state_t current_state;
 	uint8_t base_priority; // lower value = higher priority, user defined and does not change after task creation
 	uint8_t effective_priority; // lower value = higher priority, can be changed by mutex priority inheritance
 	uint32_t wakeup_tick; // 0 means the task will wait forever
-	task_state_t current_state;
 	task_block_reason_t block_reason;
 	waitlist_t *blocked_waitlist; // the primitive the task is waiting on, NULL if none
 	bool timeout; // true if the task was unblocked due to timeout
 };
+
+typedef struct {
+	uint8_t count;
+	waitlist_t waitlist;
+} semaphore_t;
 
 static const int OS_WAIT_FOREVER = -1;
 
