@@ -31,10 +31,6 @@ static void waitlist_remove_task(waitlist_t *waitlist, uint8_t task_idx);
 
 /*-------------- public APIs ---------------*/
 
-/*
-starts the kernel: sets up the scheduler stack, idle task, PendSV priority, and SysTick tick, switches to PSP, then dispatches the first task
-call once from main after all os_task_create calls; never returns
-*/
 void os_kernel_start(void)
 {
 	uint32_t scheduler_stack_top = (uint32_t)(scheduler_stack + sizeof(scheduler_stack) / sizeof(scheduler_stack[0]));
@@ -47,10 +43,6 @@ void os_kernel_start(void)
 	user_tasks[current_task].task_handler(); // never returns
 }
 
-/*
-registers a task with its own private stack; lower priority value = higher priority, valid range OS_PRIORITY_HIGHEST..OS_PRIORITY_LOWEST
-returns OS_OK, or OS_ERR_MAX_TASKS / OS_ERR_INVALID_PRIORITY / OS_ERR_NULL_PTR on failure
-*/
 os_err_t os_task_create(void (*task_handler)(void), uint8_t priority, uint32_t *task_stack_base, uint32_t task_stack_size)
 {
 	if (task_count >= OS_MAX_TASKS)
@@ -59,7 +51,6 @@ os_err_t os_task_create(void (*task_handler)(void), uint8_t priority, uint32_t *
 		return OS_ERR_INVALID_PRIORITY;
 	if (task_stack_base == NULL)
 		return OS_ERR_NULL_PTR;
-
 		
 	TCB_t *tcb = &user_tasks[task_count];
 	tcb->stack_pointer = port_init_task_stack_frame(task_handler, task_stack_base, task_stack_size);
@@ -76,7 +67,6 @@ os_err_t os_task_create(void (*task_handler)(void), uint8_t priority, uint32_t *
 	return OS_OK;
 }
 
-// blocks the current task for tick_count ticks and yields to the next ready task
 void os_task_delay(uint32_t tick_count)
 {
 	uint32_t prev_int_state = port_enter_critical();
@@ -97,7 +87,7 @@ void os_task_delay(uint32_t tick_count)
 	port_exit_critical(prev_int_state);
 }
 
-os_err_t os_sem_create(semaphore_t *sem, uint8_t initial_count, schedule_policy_t schedule_policy) 
+os_err_t os_sem_create(semaphore_t *sem, uint8_t initial_count, schedule_policy_t schedule_policy)
 {
 	if (sem == NULL) return OS_ERR_NULL_PTR;
 	if (initial_count > OS_MAX_TASKS) return OS_ERR_SEM_INVALID_INIT_COUNT;
@@ -108,7 +98,7 @@ os_err_t os_sem_create(semaphore_t *sem, uint8_t initial_count, schedule_policy_
 	return OS_OK;
 }
 
-os_err_t os_sem_wait(semaphore_t *sem, uint16_t timeout) 
+os_err_t os_sem_wait(semaphore_t *sem, uint16_t timeout)
 {
 	if (sem == NULL) return OS_ERR_NULL_PTR;
 
@@ -146,7 +136,7 @@ os_err_t os_sem_wait(semaphore_t *sem, uint16_t timeout)
 	return OS_OK; // the task was unblocked due to semaphore being available
 }
 
-os_err_t os_sem_post(semaphore_t *sem) 
+os_err_t os_sem_post(semaphore_t *sem)
 {
 	if (sem == NULL) return OS_ERR_NULL_PTR;
 
