@@ -176,8 +176,14 @@ os_err_t os_mutex_lock(mutex_t *mtx, uint16_t timeout)
 	// mutex is available, lock it and return
 	if (mtx->state == mutex_unlocked)
 	{
+		// add mutex to the list of mutexes owned by the task
+		user_tasks[current_task].owned_mutexes[user_tasks[current_task].owned_mutex_count] = mtx;
+		user_tasks[current_task].owned_mutex_count++;
+
+		// set the current task as the owner of the mutex and mark it as locked
 		mtx->owner = &user_tasks[current_task];
 		mtx->state = mutex_locked;
+
 		port_exit_critical(prev_int_state);
 		return OS_OK;
 	}
@@ -190,7 +196,7 @@ os_err_t os_mutex_lock(mutex_t *mtx, uint16_t timeout)
 		return OS_ERR_MTX_RECURSIVE_LOCK; // cannot lock a mutex that is already owned by the same task
 	}
 
-	// mutex is not available, check if the user wants to block the task
+	// mutex is not available and the user dont own the mutex, check if the user wants to block the task
 	if (timeout == 0)
 	{
 		// user dont want to block the task to wait for mutex, return immediately 
@@ -198,7 +204,7 @@ os_err_t os_mutex_lock(mutex_t *mtx, uint16_t timeout)
 		return OS_ERR_UNAVAILABLE;
 	}
 
-	// mutex is not available and the current task does not own the mutex, block the current task
+	// mutex is not available, user dont own the mutex and user wants to block the task to wait for availability
 	os_err_t block_result = waitlist_block_current(&mtx->waitlist, timeout, BLOCKED_MUTEX, prev_int_state);
 	if (block_result != OS_OK)
 	{
@@ -234,9 +240,29 @@ os_err_t os_mutex_unlock(mutex_t *mtx)
 	if (next_owner != NULL) 
 	{
 		// a task is unblocked from waitlist, yield to allow the unblocked task to 
-		// run if it has higher priority than the current and other tasks, not need to unlock 
+		// run if it has higher priority than the current and other tasks, no need to unlock 
 		// the mutex since the unblocked task will now own it
-		mtx->owner = next_owner; // transfer ownership to the unblocked task
+
+		// remove the mutex from the current task's owned mutexes list
+		for (int i = 0; i < user_tasks[current_task].owned_mutex_count; i++)
+		{
+			if (user_tasks[current_task].owned_mutexes[i] == mtx)
+			{
+				// swap the last mutex in the list to the current index and decrement the count
+				// order in the owned mutexes list does not matter, this makes it O(1) instead of O(n) to remove the mutex from the list
+				user_tasks[current_task].owned_mutexes[i] = user_tasks[current_task].owned_mutexes[user_tasks[current_task].owned_mutex_count - 1];
+				user_tasks[current_task].owned_mutex_count--;
+				break;
+			}
+		}
+
+		// add the mutex to the unblocked task's owned mutexes list
+		next_owner->owned_mutexes[next_owner->owned_mutex_count] = mtx;
+		next_owner->owned_mutex_count++;
+
+		// transfer ownership to the unblocked task
+		mtx->owner = next_owner;
+
 		port_yield();
 	}
 	else // no tasks to unblock in waitlist, unlock the mutex

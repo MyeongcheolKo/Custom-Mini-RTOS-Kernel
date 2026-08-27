@@ -13,4 +13,6 @@
 #define OS_PRIORITY_HIGHEST 0
 #define OS_PRIORITY_LOWEST 31U // valid range [0, 254], so idle task wont overflow the priority range when it is set to OS_PRIORITY_LOWEST + 1
 
+#define OS_MAX_MTX_PER_TASK 4U // maximum number of mutexes a task can own at once
+
 #endif

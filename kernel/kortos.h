@@ -56,18 +56,6 @@ typedef struct {
 	schedule_policy_t schedule_policy; // the policy used to schedule wait list tasks
 } waitlist_t;
 
-struct TCB_t {
-	uint32_t stack_pointer;
-	void (*task_handler)(void);
-	task_state_t current_state;
-	uint8_t base_priority; // lower value = higher priority, user defined and does not change after task creation
-	uint8_t effective_priority; // lower value = higher priority, can be changed by mutex priority inheritance
-	uint32_t wakeup_tick; // 0 means the task will wait forever
-	task_block_reason_t block_reason;
-	waitlist_t *blocked_waitlist; // the primitive the task is waiting on, NULL if none
-	bool timeout; // true if the task was unblocked due to timeout
-};
-
 typedef struct {
 	uint8_t count;
 	waitlist_t waitlist;
@@ -78,6 +66,20 @@ typedef struct {
 	mutex_state_t state; // the current state of the mutex(locked or unlocked)
 	waitlist_t waitlist;
 } mutex_t;
+
+struct TCB_t {
+	uint32_t stack_pointer;
+	void (*task_handler)(void);
+	task_state_t current_state;
+	uint8_t base_priority; // lower value = higher priority, user defined and does not change after task creation
+	uint8_t effective_priority; // lower value = higher priority, can be changed by mutex priority inheritance
+	uint32_t wakeup_tick; // 0 means the task will wait forever
+	task_block_reason_t block_reason;
+	waitlist_t *blocked_waitlist; // the primitive the task is waiting on, NULL if none
+	mutex_t *owned_mutexes[OS_MAX_MTX_PER_TASK]; // array of mutexes owned by the task, NULL if none
+	uint8_t owned_mutex_count; // number of mutexes owned by the task
+	bool timeout; // true if the task was unblocked due to timeout
+};
 
 static const int OS_WAIT_FOREVER = -1;
 
