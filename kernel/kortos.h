@@ -20,9 +20,11 @@ typedef enum {
 	OS_ERR_MAX_TASKS,
 	OS_ERR_NULL_PTR,
 	OS_ERR_FULL,
-	OS_SEM_UNAVAILABLE,
-	OS_ERR_INVALID_SEM_UNBLOCK_METHOD,
-	OS_ERR_INVALID_SEM_INIT_COUNT
+	OS_ERR_UNAVAILABLE,
+	OS_ERR_INVALID_SCEHDULE_POLICY,
+	OS_ERR_SEM_INVALID_INIT_COUNT,
+	OS_ERR_MTX_RECURSIVE_LOCK,
+	OS_ERR_MTX_NOT_OWNER
 } os_err_t;
 
 typedef enum {
@@ -42,6 +44,11 @@ typedef enum {
 	FIFO,
 	PRIORITY // finds the first task with the highest priority in the wait list to unblock
 } schedule_policy_t;
+
+typedef enum {
+	mutex_unlocked = 0,
+	mutex_locked = 1
+} mutex_state_t;
 
 typedef struct {
 	TCB_t *task_waitlist[OS_MAX_TASKS];
@@ -66,6 +73,12 @@ typedef struct {
 	waitlist_t waitlist;
 } semaphore_t;
 
+typedef struct {
+	TCB_t *owner; // the task that currently owns the mutex, NULL if none
+	mutex_state_t state; // the current state of the mutex(locked or unlocked)
+	waitlist_t waitlist;
+} mutex_t;
+
 static const int OS_WAIT_FOREVER = -1;
 
 /*---------- public APIs ----------*/
@@ -86,6 +99,12 @@ os_err_t os_sem_create(semaphore_t *sem, uint8_t initial_count, schedule_policy_
 os_err_t os_sem_wait(semaphore_t *sem, uint16_t timeout);
 
 os_err_t os_sem_post(semaphore_t *sem);
+
+os_err_t os_mutex_create(mutex_t *mtx);
+
+os_err_t os_mutex_lock(mutex_t *mtx, uint16_t timeout);
+
+os_err_t os_mutex_unlock(mutex_t *mtx);
 
 // optional user hook for the idle task, called once per idle loop iteration
 __attribute__((weak)) void os_idle_task_hook(void) { /*default is empty, user can override this function*/ }

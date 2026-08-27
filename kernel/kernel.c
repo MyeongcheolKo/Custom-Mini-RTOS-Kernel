@@ -100,8 +100,8 @@ void os_task_delay(uint32_t tick_count)
 os_err_t os_sem_create(semaphore_t *sem, uint8_t initial_count, schedule_policy_t schedule_policy) 
 {
 	if (sem == NULL) return OS_ERR_NULL_PTR;
-	if (initial_count > OS_MAX_TASKS) return OS_ERR_INVALID_SEM_INIT_COUNT;
-	if (schedule_policy != FIFO && schedule_policy != PRIORITY) return OS_ERR_INVALID_SEM_UNBLOCK_METHOD;
+	if (initial_count > OS_MAX_TASKS) return OS_ERR_SEM_INVALID_INIT_COUNT;
+	if (schedule_policy != FIFO && schedule_policy != PRIORITY) return OS_ERR_INVALID_SCEHDULE_POLICY;
 	
 	sem->count = initial_count;
 	waitlist_init(&sem->waitlist, schedule_policy);
@@ -128,7 +128,7 @@ os_err_t os_sem_wait(semaphore_t *sem, uint16_t timeout)
 	{
 		// user dont want to block the task to wait for semaphore, return immediately 
 		port_exit_critical(prev_int_state);
-		return OS_SEM_UNAVAILABLE;
+		return OS_ERR_UNAVAILABLE;
 	}
 
 	// block the current task and add it to the semaphore's wait list
@@ -141,7 +141,7 @@ os_err_t os_sem_wait(semaphore_t *sem, uint16_t timeout)
 	// reaches here when the task was blocked successfully and wakes up after being blocked, determine how it was unblocked
 	if (user_tasks[current_task].timeout)
 	{
-		return OS_SEM_UNAVAILABLE; // the task was unblocked due to timeout
+		return OS_ERR_UNAVAILABLE; // the task was unblocked due to timeout
 	}
 	return OS_OK; // the task was unblocked due to semaphore being available
 }
@@ -152,15 +152,107 @@ os_err_t os_sem_post(semaphore_t *sem)
 
 	uint32_t prev_int_state = port_enter_critical();
 	
-	// attempt tounblock the next task in the wait list based on the unblock policy
+	// attempt to unblock the next task in the waitlist based on the unblock policy
 	if (waitlist_unblock(&sem->waitlist) != NULL) 
 	{
-		// a task is unblocked yield to allow the unblocked task to run if it has higher priority than the current task
+		// a task is unblocked from waitlist, yield to allow the unblocked task to run if it has higher priority than the current task
 		port_yield();
 	}
-	else // no tasks to unblock, increment the semaphore count
+	else // no tasks to unblock from waitlist, increment the semaphore count
 	{
 		sem->count++;
+	}
+
+	port_exit_critical(prev_int_state);
+	return OS_OK;
+}
+
+os_err_t os_mutex_create(mutex_t *mtx)
+{
+	if (mtx == NULL) return OS_ERR_NULL_PTR;
+
+	mtx->owner = NULL; // no task owns the mutex yet
+	mtx->state = mutex_unlocked; // mutex is initially unlocked
+	waitlist_init(&mtx->waitlist, PRIORITY); // mutexes always use priority scheduling for unblocking tasks
+	return OS_OK;
+}
+
+os_err_t os_mutex_lock(mutex_t *mtx, uint16_t timeout)
+{
+	if (mtx == NULL) return OS_ERR_NULL_PTR;
+
+	uint32_t prev_int_state = port_enter_critical();
+
+	// mutex is available, lock it and return
+	if (mtx->state == mutex_unlocked)
+	{
+		mtx->owner = &user_tasks[current_task];
+		mtx->state = mutex_locked;
+		port_exit_critical(prev_int_state);
+		return OS_OK;
+	}
+
+	// mutex is not available, check if the user owns the mutex already
+	if (mtx->owner == &user_tasks[current_task])
+	{
+		// the current task already owns the mutex, return error
+		port_exit_critical(prev_int_state);
+		return OS_ERR_MTX_RECURSIVE_LOCK; // cannot lock a mutex that is already owned by the same task
+	}
+
+	// mutex is not available, check if the user wants to block the task
+	if (timeout == 0)
+	{
+		// user dont want to block the task to wait for mutex, return immediately 
+		port_exit_critical(prev_int_state);
+		return OS_ERR_UNAVAILABLE;
+	}
+
+	// mutex is not available and the current task does not own the mutex, block the current task
+	os_err_t block_result = waitlist_block_current(&mtx->waitlist, timeout, BLOCKED_MUTEX, prev_int_state);
+	if (block_result != OS_OK)
+	{
+		return block_result; // return the error that occured while trying to block the task
+	}
+
+	// reaches here when the task was blocked successfully and wakes up after being blocked, determine how it was unblocked
+	if (user_tasks[current_task].timeout)
+	{
+		return OS_ERR_UNAVAILABLE; // the task was unblocked due to timeout so the mutex was unavailable
+	}
+
+	// the task was unblocked due to mutex being available
+	return OS_OK;
+}
+
+os_err_t os_mutex_unlock(mutex_t *mtx)
+{
+	if (mtx == NULL) return OS_ERR_NULL_PTR;
+
+	uint32_t prev_int_state = port_enter_critical();
+
+	// check if the current task owns the mutex
+	if (mtx->owner != &user_tasks[current_task])
+	{
+		// the current task does not own the mutex, cannot unlock a mutex that is not owned by the current task
+		port_exit_critical(prev_int_state);
+		return OS_ERR_MTX_NOT_OWNER;
+	}
+
+	// the task owns the mutex, remove it from waitlist
+	TCB_t *next_owner = waitlist_unblock(&mtx->waitlist);
+	if (next_owner != NULL) 
+	{
+		// a task is unblocked from waitlist, yield to allow the unblocked task to 
+		// run if it has higher priority than the current and other tasks, not need to unlock 
+		// the mutex since the unblocked task will now own it
+		mtx->owner = next_owner; // transfer ownership to the unblocked task
+		port_yield();
+	}
+	else // no tasks to unblock in waitlist, unlock the mutex
+	{
+		mtx->owner = NULL;
+		mtx->state = mutex_unlocked;
 	}
 
 	port_exit_critical(prev_int_state);
