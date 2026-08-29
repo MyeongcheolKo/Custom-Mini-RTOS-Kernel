@@ -28,6 +28,7 @@ static void waitlist_init(waitlist_t *waitlist, schedule_policy_t schedule_polic
 static os_err_t waitlist_block_current(waitlist_t *waitlist, uint32_t timeout, task_block_reason_t block_reason, uint32_t prev_int_state);
 static TCB_t *waitlist_unblock(waitlist_t *waitlist);
 static void waitlist_remove_task(waitlist_t *waitlist, uint8_t task_idx);
+static void mutex_recompute_owner_priority(TCB_t *owner);
 
 /*-------------- public APIs ---------------*/
 
@@ -196,7 +197,7 @@ os_err_t os_mutex_lock(mutex_t *mtx, uint16_t timeout)
 		return OS_ERR_MTX_RECURSIVE_LOCK; // cannot lock a mutex that is already owned by the same task
 	}
 
-	// mutex is not available and the user dont own the mutex, check if the user wants to block the task
+	// mutex is not available and the user does not own the mutex, check if the user wants to block the task
 	if (timeout == 0)
 	{
 		// user dont want to block the task to wait for mutex, return immediately 
@@ -204,14 +205,26 @@ os_err_t os_mutex_lock(mutex_t *mtx, uint16_t timeout)
 		return OS_ERR_UNAVAILABLE;
 	}
 
-	// mutex is not available, user dont own the mutex and user wants to block the task to wait for availability
+	// mutex is not available, user doesnt own the mutex and wants to block the task to wait for availability
+	if (user_tasks[current_task].effective_priority < mtx->owner->effective_priority)
+	{
+		// the task waiting for the mutex has a higher priority than the owner, 
+		// boost the owner's effective priority to prevent priority inversion
+		mtx->owner->effective_priority = user_tasks[current_task].effective_priority;
+	}
+	// block the current task and add it to the mutex's wait list
 	os_err_t block_result = waitlist_block_current(&mtx->waitlist, timeout, BLOCKED_MUTEX, prev_int_state);
 	if (block_result != OS_OK)
 	{
+		// recompute the owner's effective priority since it was boosted privously 
+		// but now waitlist_block_current() fails, so the priority should be restored
+		mutex_recompute_owner_priority(mtx->owner); 
 		return block_result; // return the error that occured while trying to block the task
 	}
 
 	// reaches here when the task was blocked successfully and wakes up after being blocked, determine how it was unblocked
+	mutex_recompute_owner_priority(mtx->owner); // recompute the owner's effective priorityy since the waitlist 
+												// was modified when the task was unblocked due to timeout
 	if (user_tasks[current_task].timeout)
 	{
 		return OS_ERR_UNAVAILABLE; // the task was unblocked due to timeout so the mutex was unavailable
@@ -235,38 +248,44 @@ os_err_t os_mutex_unlock(mutex_t *mtx)
 		return OS_ERR_MTX_NOT_OWNER;
 	}
 
-	// the task owns the mutex, remove it from waitlist
+	// the task owns the mutex, remove it from waitlist and the task's owned mutexes list
+	for (int i = 0; i < user_tasks[current_task].owned_mutex_count; i++)
+	{
+		if (user_tasks[current_task].owned_mutexes[i] == mtx)
+		{
+			// swap the last mutex in the list to the current index and decrement the count
+			// order in the owned mutexes list does not matter, this makes it O(1) instead of O(n) to remove the mutex from the list
+			user_tasks[current_task].owned_mutexes[i] = user_tasks[current_task].owned_mutexes[user_tasks[current_task].owned_mutex_count - 1];
+			user_tasks[current_task].owned_mutex_count--;
+			break;
+		}
+	}
 	TCB_t *next_owner = waitlist_unblock(&mtx->waitlist);
 	if (next_owner != NULL) 
 	{
-		// a task is unblocked from waitlist, yield to allow the unblocked task to 
-		// run if it has higher priority than the current and other tasks, no need to unlock 
-		// the mutex since the unblocked task will now own it
+		// a task is unblocked from waitlist 
 
-		// remove the mutex from the current task's owned mutexes list
-		for (int i = 0; i < user_tasks[current_task].owned_mutex_count; i++)
-		{
-			if (user_tasks[current_task].owned_mutexes[i] == mtx)
-			{
-				// swap the last mutex in the list to the current index and decrement the count
-				// order in the owned mutexes list does not matter, this makes it O(1) instead of O(n) to remove the mutex from the list
-				user_tasks[current_task].owned_mutexes[i] = user_tasks[current_task].owned_mutexes[user_tasks[current_task].owned_mutex_count - 1];
-				user_tasks[current_task].owned_mutex_count--;
-				break;
-			}
-		}
+		// recompute the current owner's effective priority since it is no longer the owner of the mutex
+		mutex_recompute_owner_priority(mtx->owner);
 
 		// add the mutex to the unblocked task's owned mutexes list
 		next_owner->owned_mutexes[next_owner->owned_mutex_count] = mtx;
 		next_owner->owned_mutex_count++;
 
 		// transfer ownership to the unblocked task
+		// no need to unlock the mutex since the unblocked task will now own it
 		mtx->owner = next_owner;
 
+		// recompute the new owner's effective priority since it is now the owner of the mutex
+		mutex_recompute_owner_priority(mtx->owner);
+
+		// yield to allow the unblocked task to run if it has higher priority than the current and other tasks
 		port_yield();
 	}
 	else // no tasks to unblock in waitlist, unlock the mutex
 	{
+		// no need to recompute the owner's effective priority here since
+		// no task was waiting on the mutex so its priority was not boosted
 		mtx->owner = NULL;
 		mtx->state = mutex_unlocked;
 	}
@@ -302,7 +321,7 @@ void os_save_sp_value(uint32_t current_psp_val)
 // schedules the next ready task in priority round-robin order, falls back to idle if all tasks are blocked
 void os_schedule_next_task(void)
 {
-	// task that was running (and didn't block) goes back to TASK_READY
+	// task that was running goes back to TASK_READY
     if (user_tasks[current_task].current_state == TASK_RUNNING) 
 		user_tasks[current_task].current_state = TASK_READY;
 	
@@ -501,6 +520,30 @@ static void waitlist_remove_task(waitlist_t *waitlist, uint8_t task_idx)
 
 	// decrement wait_task count
 	waitlist->wait_count--; 
+}
+
+// recomputes the effective priority from each mutex the task owns and the tasks in each mutex's waitlist
+static void mutex_recompute_owner_priority(TCB_t *owner)
+{
+	// assume the base priority if no tasks in the waitlist
+	uint32_t highest_priority = owner->base_priority;
+
+	// go through all mutexes the task owns
+	for (int i = 0; i < owner->owned_mutex_count; i++)
+	{
+		waitlist_t *waitlist = &owner->owned_mutexes[i]->waitlist;
+		// go through all tasks in this mutex's waitlist
+		for (int j = 0; j < waitlist->wait_count; j++)
+		{
+			if (highest_priority > waitlist->task_waitlist[j]->effective_priority)
+			{
+				highest_priority = waitlist->task_waitlist[j]->effective_priority;
+			}
+		}
+	}
+
+	// set the effective priority of the current task to the highest priority found
+	owner->effective_priority = highest_priority;
 }
 
 // the internal used idle task handler called by the scheduler, users should override os_idle_task_hook() instead of this
