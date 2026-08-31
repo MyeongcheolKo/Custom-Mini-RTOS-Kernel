@@ -78,7 +78,7 @@ void os_task_delay(uint32_t tick_count)
 	if (current_task != IDLE_TASK_IDX)
 	{
 		// set wakeup time for the task
-		user_tasks[current_task].wakeup_tick = systick_count + tick_count;
+		user_tasks[current_task].wakeup_tick = tick_count == (uint32_t)OS_WAIT_FOREVER ? 0 : systick_count + tick_count;
 		// change to blocked state and specify reason
 		user_tasks[current_task].block_reason = BLOCKED_DELAY;
 		user_tasks[current_task].current_state = TASK_BLOCKED;
@@ -556,15 +556,11 @@ static void mutex_donate_priority(TCB_t *mutex_owner)
 	}
 }
 
-// recomputes the highest priority among every task in the waitlist of each mutex this task owns, 
-// called when a mutex ownership changes or a waiter leaves a waitlist
-
 // recomputes mutex_owner's effective priority from scratch as the highest priority among
-// its base priority and every task waiting on any mutex it owns; if mutex_owner is itself
-// blocked on another mutex, repeats the same recompute for that mutex's owner, and so on
-// outward until reaching a task that isn't blocked on a mutex — called when a mutex
-// ownership changes or a waiter leaves a waitlist, since either can lower a priority that
-// donation's incremental boost can't
+// its base priority and every task waiting on any mutex it owns. If mutex_owner is itself
+// blocked on another mutex, repeat the same recompute for that mutex's owner, and so on
+// outward until reaching a task that isn't blocked on a mutex. Called when a mutex
+// ownership changes or a waiter leaves a waitlist
 static void mutex_recompute_owner_priority(TCB_t *mutex_owner)
 {
 	uint8_t iterations = 0;
