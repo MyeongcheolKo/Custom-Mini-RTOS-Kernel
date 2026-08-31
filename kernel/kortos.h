@@ -75,7 +75,7 @@ struct TCB_t {
 	uint8_t effective_priority; // lower value = higher priority, can be changed by mutex priority inheritance
 	uint32_t wakeup_tick; // 0 means the task will wait forever
 	task_block_reason_t block_reason;
-	waitlist_t *blocked_waitlist; // the primitive the task is waiting on, NULL if none
+	waitlist_t *blocked_waitlist; // the primitive's waitlist the task is blocked on, NULL if none
 	mutex_t *owned_mutexes[OS_MAX_MTX_PER_TASK]; // array of mutexes owned by the task, NULL if none
 	uint8_t owned_mutex_count; // number of mutexes owned by the task
 	bool timeout; // true if the task was unblocked due to timeout
@@ -87,7 +87,7 @@ static const int OS_WAIT_FOREVER = -1;
 
 /*
 @brief
-	starts the kernel: sets up the scheduler stack, idle task, PendSV priority, and SysTick
+	Starts the kernel: sets up the scheduler stack, idle task, PendSV priority, and SysTick
 	tick, switches to PSP, then dispatches the first task; call once after all tasks and 
 	primitive create calls, never returns
 */
@@ -95,7 +95,7 @@ void os_kernel_start(void);
 
 /*
 @brief
-	registers a task with its own private stack; lower priority value = higher priority
+	Registers a task with its own private stack; lower priority value = higher priority
 
 @param task_handler Function to run when the task is scheduled
 @param priority Task priority, lower value = higher priority, valid range OS_PRIORITY_HIGHEST..OS_PRIORITY_LOWEST
@@ -111,7 +111,7 @@ os_err_t os_task_create(void (*task_handler)(void), uint8_t priority, uint32_t *
 
 /*
 @brief
-	blocks the current task for tick_count ticks and yields to the next ready task
+	Blocks the current task for tick_count ticks and yields to the next ready task
 
 @param tick_count Number of ticks to block for
 */
@@ -119,7 +119,7 @@ void os_task_delay(uint32_t tick_count);
 
 /*
 @brief
-	initializes semaphore with an initial count and the schedule policy used to pick which
+	Initializes semaphore with an initial count and the schedule policy used to pick which
 	blocked task to wake on each os_sem_post() (FIFO = longest waiting, PRIORITY = highest priority)
 
 @param sem Pointer to the semaphore to initialize
@@ -135,7 +135,7 @@ os_err_t os_sem_create(semaphore_t *sem, uint8_t initial_count, schedule_policy_
 
 /*
 @brief
-	waits on semaphore: decrements count and returns immediately if available, otherwise
+	Waits on semaphore: decrements count and returns immediately if available, otherwise
 	blocks the calling task for up to timeout ticks
 
 @param sem Pointer to the semaphore to wait on
@@ -150,7 +150,7 @@ os_err_t os_sem_wait(semaphore_t *sem, uint16_t timeout);
 
 /*
 @brief
-	posts to semaphore: wakes the next blocked task according to sem schedule policy 
+	Posts to semaphore: wakes the next blocked task according to sem schedule policy 
 	if any are waiting, otherwise increments count
 
 @param sem Pointer to the semaphore to post to
@@ -174,8 +174,13 @@ os_err_t os_mutex_create(mutex_t *mtx);
 
 /*
 @brief
-	locks mtx and returns immediately if unlocked, otherwise blocks the calling
-	task for up to timeout ticks; does not support recursive locks
+	Locks mtx and returns immediately if unlocked, otherwise blocks the calling
+	task for up to timeout ticks; does not support recursive locks. If mtx is held
+	by a lower priority task, that owner's effective priority is boosted to the
+	caller's to prevent priority inversion. If the owner is itself blocked waiting
+	on another mutex, the boost propagates to that mutex's owner as well, and so on
+	up the chain until it reaches a task that isn't blocked on a mutex. If the call
+	times out instead of acquiring mtx, any boost donated is released the same way. 
 
 @param mtx Pointer to the mutex to lock
 @param timeout Number of ticks to block for if mtx is unavailable, 0 to not block
@@ -190,8 +195,11 @@ os_err_t os_mutex_lock(mutex_t *mtx, uint16_t timeout);
 
 /*
 @brief
-	unlocks mtx: if a task is waiting on mtx, ownership transfers directly to it (mtx
-	stays locked)
+	Unlocks mtx. If a task is waiting on mtx, ownership transfers directly to it (mtx
+	stays locked) and recomputes the new owner's effective priority as it may no longer 
+	be boosted by waiters on mtx. If that owner is itself blocked waiting on
+	another mutex, the same recomputation propagates to that mutex's owner as well, and
+	so on up the chain.
 
 @param mtx Pointer to the mutex to unlock
 

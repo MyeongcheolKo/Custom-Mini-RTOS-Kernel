@@ -5,7 +5,7 @@
  *      Author: krisko
  */
 #include <stdint.h>
-#include <stdio.h>
+#include <stddef.h>
 #include "kortos.h"
 #include "kernel_internal.h"
 #include "port.h"
@@ -19,16 +19,18 @@ static uint32_t task_count = 1; // idle task always exists
 static uint32_t current_task = 0; // start with idle task
 static uint32_t systick_count = 0;
 
-/* -------------- os private function prototypes -------------- */
+/*-------------- os private function prototypes --------------*/
 static void init_idle_task(void);
+static void idle_task_handler(void);
 static __attribute__((used)) void update_tick_count(void);
 static void unblock_tasks(void);
-static void idle_task_handler(void);
 static void waitlist_init(waitlist_t *waitlist, schedule_policy_t schedule_policy);
 static os_err_t waitlist_block_current(waitlist_t *waitlist, uint32_t timeout, task_block_reason_t block_reason, uint32_t prev_int_state);
 static TCB_t *waitlist_unblock(waitlist_t *waitlist);
 static void waitlist_remove_task(waitlist_t *waitlist, uint8_t task_idx);
+static void mutex_donate_priority(TCB_t *mutex_owner);
 static void mutex_recompute_owner_priority(TCB_t *owner);
+static mutex_t *cast_waitlist_to_mutex(waitlist_t *waitlist);
 
 /*-------------- public APIs ---------------*/
 
@@ -206,12 +208,7 @@ os_err_t os_mutex_lock(mutex_t *mtx, uint16_t timeout)
 	}
 
 	// mutex is not available, user doesnt own the mutex and wants to block the task to wait for availability
-	if (user_tasks[current_task].effective_priority < mtx->owner->effective_priority)
-	{
-		// the task waiting for the mutex has a higher priority than the owner, 
-		// boost the owner's effective priority to prevent priority inversion
-		mtx->owner->effective_priority = user_tasks[current_task].effective_priority;
-	}
+	mutex_donate_priority(mtx->owner);
 	// block the current task and add it to the mutex's wait list
 	os_err_t block_result = waitlist_block_current(&mtx->waitlist, timeout, BLOCKED_MUTEX, prev_int_state);
 	if (block_result != OS_OK)
@@ -368,6 +365,16 @@ static void init_idle_task(void)
 	tcb->timeout = false;
 }
 
+// the internal used idle task handler called by the scheduler, users should override os_idle_task_hook() instead of this
+static void idle_task_handler(void)
+{
+	while(1)
+	{
+		os_idle_task_hook(); // user optional work
+		PORT_WAIT_FOR_INTERRUPT(); // sleep core until next interrupt (SysTick wakes it)
+	}
+}
+
 // increments the tick counter on every SysTick interrupt
 static void update_tick_count(void)
 {
@@ -522,36 +529,80 @@ static void waitlist_remove_task(waitlist_t *waitlist, uint8_t task_idx)
 	waitlist->wait_count--; 
 }
 
-// recomputes the effective priority from each mutex the task owns and the tasks in each mutex's waitlist
-static void mutex_recompute_owner_priority(TCB_t *owner)
+// donate priority to the mutex owner if the current task has a higher priority, 
+// if the mutex owner is itself blocked on another mutex, the priority donation will propagate 
+// to the owner of that mutex and so on until it reaches a task that is not blocked on a mutex
+static void mutex_donate_priority(TCB_t *mutex_owner)
 {
-	// assume the base priority if no tasks in the waitlist
-	uint32_t highest_priority = owner->base_priority;
+	uint8_t priority = user_tasks[current_task].effective_priority;
 
-	// go through all mutexes the task owns
-	for (int i = 0; i < owner->owned_mutex_count; i++)
+	uint8_t iterations = 0; // prevent infinite loop in case of circular dependency
+	while (mutex_owner != NULL && iterations < OS_MAX_TASKS)
 	{
-		waitlist_t *waitlist = &owner->owned_mutexes[i]->waitlist;
-		// go through all tasks in this mutex's waitlist
-		for (int j = 0; j < waitlist->wait_count; j++)
+		if (mutex_owner->effective_priority > priority)
 		{
-			if (highest_priority > waitlist->task_waitlist[j]->effective_priority)
-			{
-				highest_priority = waitlist->task_waitlist[j]->effective_priority;
-			}
+			// the task that holds the mutex waiting for has a higher priority than the owner, 
+			// boost the owner's effective priority to prevent priority inversion
+			mutex_owner->effective_priority = priority;
 		}
-	}
 
-	// set the effective priority of the current task to the highest priority found
-	owner->effective_priority = highest_priority;
+		// check if the current mutex owner is blocked on another mutex, if so, 
+		// propagate the priority recomputation to the owner of that mutex
+		if (mutex_owner->block_reason != BLOCKED_MUTEX) break; // ensure the task is blocked on a mutex
+		mutex_t *blocked_on_mutex = cast_waitlist_to_mutex(mutex_owner->blocked_waitlist);
+		mutex_owner = (blocked_on_mutex != NULL) ? blocked_on_mutex->owner : NULL;
+
+		iterations++;
+	}
 }
 
-// the internal used idle task handler called by the scheduler, users should override os_idle_task_hook() instead of this
-static void idle_task_handler(void)
+// recomputes the highest priority among every task in the waitlist of each mutex this task owns, 
+// called when a mutex ownership changes or a waiter leaves a waitlist
+
+// recomputes mutex_owner's effective priority from scratch as the highest priority among
+// its base priority and every task waiting on any mutex it owns; if mutex_owner is itself
+// blocked on another mutex, repeats the same recompute for that mutex's owner, and so on
+// outward until reaching a task that isn't blocked on a mutex — called when a mutex
+// ownership changes or a waiter leaves a waitlist, since either can lower a priority that
+// donation's incremental boost can't
+static void mutex_recompute_owner_priority(TCB_t *mutex_owner)
 {
-	while(1)
+	uint8_t iterations = 0;
+	while (mutex_owner != NULL && iterations < OS_MAX_TASKS)
 	{
-		os_idle_task_hook(); // user optional work
-		PORT_WAIT_FOR_INTERRUPT(); // sleep core until next interrupt (SysTick wakes it)
+		// assume the base priority if no tasks in the waitlist
+		uint32_t highest_priority = mutex_owner->base_priority;
+	
+		// go through all mutexes the task owns
+		for (int i = 0; i < mutex_owner->owned_mutex_count; i++)
+		{
+			// go through all tasks in each mutex's waitlist
+			waitlist_t *waitlist = &mutex_owner->owned_mutexes[i]->waitlist;
+			for (int j = 0; j < waitlist->wait_count; j++)
+			{
+				if (highest_priority > waitlist->task_waitlist[j]->effective_priority)
+				{
+					highest_priority = waitlist->task_waitlist[j]->effective_priority;
+				}
+			}
+		}
+	
+		// set the effective priority of the current task to the highest priority found 
+		mutex_owner->effective_priority = highest_priority;
+
+		// check if the current mutex owner is blocked on another mutex, if so, 
+		// propagate the priority recomputation to the owner of that mutex
+		if (mutex_owner->block_reason != BLOCKED_MUTEX) break; // stop if the task is not blocked on a mutex
+		mutex_t *blocked_on_mutex = cast_waitlist_to_mutex(mutex_owner->blocked_waitlist);
+		mutex_owner = (blocked_on_mutex != NULL) ? blocked_on_mutex->owner : NULL;
+
+		iterations++;
 	}
+}
+
+static mutex_t *cast_waitlist_to_mutex(waitlist_t *waitlist)
+{
+	if (waitlist == NULL) return NULL;
+	
+	return (mutex_t *)((char *)waitlist - offsetof(mutex_t, waitlist));
 }
