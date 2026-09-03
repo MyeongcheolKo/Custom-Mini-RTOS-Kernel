@@ -227,7 +227,8 @@ os_err_t os_mutex_lock(mutex_t *mtx, uint16_t timeout)
 		return OS_ERR_UNAVAILABLE; // the task was unblocked due to timeout so the mutex was unavailable
 	}
 
-	// the task was unblocked due to mutex being available
+	// the task was unblocked due to mutex being available (the original owner unlocked 
+	// the mutex and ownership was transferred to the unblocked task)
 	return OS_OK;
 }
 
@@ -454,11 +455,11 @@ static os_err_t waitlist_block_current(waitlist_t *waitlist, uint32_t timeout, t
 	// add the task to the wait list
 	waitlist->task_waitlist[waitlist->wait_count] = &user_tasks[current_task];
 	waitlist->wait_count++; 
-
-	port_exit_critical(prev_int_state);
 	
 	// schedule for other tasks to run since the current task is blocked
 	port_yield();
+
+	port_exit_critical(prev_int_state);
 
 	// resumes here when wakes up after being blocked, caller should determine how 
 	// it was unblocked by checking user_tasks[current_task].timeout
