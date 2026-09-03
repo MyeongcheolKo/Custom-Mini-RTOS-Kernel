@@ -162,7 +162,7 @@ os_err_t os_sem_create(semaphore_t *sem, uint8_t initial_count, schedule_policy_
 @retval OS_ERR_NULL_PTR - sem passed in is NULL
 @retval OS_ERR_FULL - sem's wait list is already full
 */
-os_err_t os_sem_wait(semaphore_t *sem, uint16_t timeout);
+os_err_t os_sem_wait(semaphore_t *sem, uint32_t timeout);
 
 /*
 @brief
@@ -207,7 +207,7 @@ os_err_t os_mutex_create(mutex_t *mtx);
 @retval OS_ERR_NULL_PTR - mtx passed in is NULL
 @retval OS_ERR_FULL - mtx's wait list is already full
 */
-os_err_t os_mutex_lock(mutex_t *mtx, uint16_t timeout);
+os_err_t os_mutex_lock(mutex_t *mtx, uint32_t timeout);
 
 /*
 @brief

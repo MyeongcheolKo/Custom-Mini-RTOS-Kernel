@@ -102,7 +102,7 @@ os_err_t os_sem_create(semaphore_t *sem, uint8_t initial_count, schedule_policy_
 	return OS_OK;
 }
 
-os_err_t os_sem_wait(semaphore_t *sem, uint16_t timeout)
+os_err_t os_sem_wait(semaphore_t *sem, uint32_t timeout)
 {
 	if (sem == NULL) return OS_ERR_NULL_PTR;
 
@@ -171,7 +171,7 @@ os_err_t os_mutex_create(mutex_t *mtx)
 	return OS_OK;
 }
 
-os_err_t os_mutex_lock(mutex_t *mtx, uint16_t timeout)
+os_err_t os_mutex_lock(mutex_t *mtx, uint32_t timeout)
 {
 	if (mtx == NULL) return OS_ERR_NULL_PTR;
 
