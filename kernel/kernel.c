@@ -6,6 +6,7 @@
  */
 #include <stdint.h>
 #include <stddef.h>
+#include <string.h>
 #include "kortos.h"
 #include "kernel_internal.h"
 #include "port.h"
@@ -292,6 +293,142 @@ os_err_t os_mutex_unlock(mutex_t *mtx)
 	return OS_OK;
 }
 
+os_err_t os_queue_create(queue_t *queue, void *buffer, uint32_t item_size, uint32_t max_items, schedule_policy_t schedule_policy)
+{
+	if (queue == NULL || buffer == NULL) return OS_ERR_NULL_PTR;
+	if (item_size == 0 || max_items == 0) return OS_ERR_INVALID_ARGUMENT;
+	if (schedule_policy != FIFO && schedule_policy != PRIORITY) return OS_ERR_INVALID_SCEHDULE_POLICY;
+	
+	queue->buffer = (uint8_t*)buffer; // store the byte address of the buffer user passed in
+	queue->item_size = item_size;
+	// this buffer byte address + item_size approach makes item N at buffer[N * item_size], it allows buffer to be any datatype
+	
+	queue->max_items = max_items;
+	queue->count = 0;
+	queue->head = 0;
+	queue->tail = 0;
+	queue->dropped_count = 0;
+
+	waitlist_init(&queue->send_waitlist, schedule_policy);
+	waitlist_init(&queue->recv_waitlist, schedule_policy);
+	return OS_OK;
+}
+
+os_err_t os_queue_send_from_task(queue_t *queue, const void *item, uint32_t timeout)
+{
+	if (queue == NULL || item == NULL) return OS_ERR_NULL_PTR;
+
+	uint32_t prev_int_state = port_enter_critical();
+
+	// check if the queue is full
+	if (queue->count >= queue->max_items)
+	{
+		// the queue is full, check if the user wants to block the task
+		if (timeout == 0) 
+		{
+			port_exit_critical(prev_int_state);
+			return OS_ERR_UNAVAILABLE;
+		}
+
+		// the queue is full and the user want to block the task to wait for the queue to be read, 
+		// add task to send waitlist and block it until the queue is available or timeout occurs
+		os_err_t block_result = waitlist_block_current(&queue->send_waitlist, timeout, BLOCKED_QUEUE_SEND, prev_int_state);
+		if (block_result != OS_OK) return block_result;
+
+		// reaches here when the task was blocked successfully and wakes up after 
+		// being blocked, determine how it was unblocked
+		if (user_tasks[current_task].timeout)
+		{
+			return OS_ERR_UNAVAILABLE; // the task was unblocked due to timeout so the queue was unavailable
+		}
+		// the task was unblocked due to queue being available, proceed
+
+		prev_int_state = port_enter_critical(); // re-enter critical section, since waitlist_block_current exits critical section
+	}
+
+	// add the item to the queue
+	memcpy(queue->buffer + (queue->head * queue->item_size), item, queue->item_size);
+	queue->count++;
+	queue->head = (queue->head + 1) % queue->max_items;
+
+	// check if any tasks are waiting to receive from the queue
+	TCB_t *unblocked_task = waitlist_unblock(&queue->recv_waitlist); // returns NULL if no tasks were unblocked
+	if (unblocked_task != NULL) 
+	{
+		// a task was unblocked from the receive waitlist, yield to allow 
+		// it to run if it has higher priority than the current task
+		port_yield();
+	}
+	
+	port_exit_critical(prev_int_state);
+	return OS_OK;
+}
+
+os_err_t os_queue_send_from_isr(queue_t *queue, const void *item)
+{
+	os_err_t result = os_queue_send_from_task(queue, item, 0); // hardcode timeout to 0 since ISRs cannot block
+	if (result == OS_ERR_UNAVAILABLE)
+	{
+		queue->dropped_count++; // increment the dropped count for diagnosis purposes
+	}
+	return result;
+}
+
+os_err_t os_queue_recv_from_task(queue_t *queue, void *item, uint32_t timeout)
+{
+	if (queue == NULL || item == NULL) return OS_ERR_NULL_PTR;
+
+	uint32_t prev_int_state = port_enter_critical();
+
+	// check if the queue contains data
+	if (queue->count == 0)
+	{
+		// the queue is empty, check if the user wants to block the task
+		if (timeout == 0) 
+		{
+			port_exit_critical(prev_int_state);
+			return OS_ERR_UNAVAILABLE;
+		}
+
+		// the queue is empty and the user want to wait for send to the queue to have data,
+		// add task to receive waitlist and block it until the queue is available or timeout occurs
+		os_err_t block_result = waitlist_block_current(&queue->recv_waitlist, timeout, BLOCKED_QUEUE_RECV, prev_int_state);
+		if (block_result != OS_OK) return block_result;
+
+		// reaches here when the task was blocked successfully and wakes up after 
+		// being blocked, determine how it was unblocked
+		if (user_tasks[current_task].timeout)
+		{
+			return OS_ERR_UNAVAILABLE; // the task was unblocked due to timeout so the queue was unavailable
+		}
+		// the task was unblocked due to queue being available, proceed
+
+		prev_int_state = port_enter_critical(); // re-enter critical section, since waitlist_block_current exits critical section
+	}
+
+	// copy the data from the queue to the user's item buffer and return
+	memcpy(item, queue->buffer + (queue->tail * queue->item_size), queue->item_size);
+	queue->count--;
+	queue->tail = (queue->tail + 1) % queue->max_items;
+
+	// check if any tasks are waiting to send to the queue
+	TCB_t *unblocked_task = waitlist_unblock(&queue->send_waitlist); // returns NULL if no tasks were unblocked
+	if (unblocked_task != NULL) 
+	{
+		// a task was unblocked from the send waitlist, yield to allow 
+		// it to run if it has higher priority than the current task
+		port_yield();
+	}
+
+	port_exit_critical(prev_int_state);
+	return OS_OK;
+}
+
+os_err_t os_queue_recv_from_isr(queue_t *queue, void *item)
+{
+	return os_queue_recv_from_task(queue, item, 0); // hardcode timeout to 0 since ISRs cannot block
+}
+
 /*------------- internal kernel interface (core + port use, not application API) --------------*/
 
 // called by SysTick_Handler to update tick count, unblock tasks, and pend PendSV
@@ -443,7 +580,7 @@ static os_err_t waitlist_block_current(waitlist_t *waitlist, uint32_t timeout, t
 	if (waitlist->wait_count >= OS_MAX_TASKS)
 	{
 		port_exit_critical(prev_int_state);
-		return OS_ERR_FULL;
+		return OS_ERR_WAITLIST_FULL;
 	}
 
 	// block the task

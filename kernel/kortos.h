@@ -16,12 +16,13 @@ typedef struct TCB_t TCB_t; // forward declaration of TCB_t so it can be used in
 
 typedef enum {
 	OS_OK = 0,
+	OS_ERR_INVALID_ARGUMENT,
 	OS_ERR_INVALID_PRIORITY,
 	OS_ERR_MAX_TASKS,
 	OS_ERR_NULL_PTR,
-	OS_ERR_FULL,
 	OS_ERR_UNAVAILABLE,
 	OS_ERR_INVALID_SCEHDULE_POLICY,
+	OS_ERR_WAITLIST_FULL,
 	OS_ERR_SEM_INVALID_INIT_COUNT,
 	OS_ERR_MTX_RECURSIVE_LOCK,
 	OS_ERR_MTX_NOT_OWNER
@@ -37,7 +38,9 @@ typedef enum {
 	BLOCKED_NONE = 0, // task is not blocked
 	BLOCKED_DELAY,
 	BLOCKED_SEM,
-	BLOCKED_MUTEX
+	BLOCKED_MUTEX,
+	BLOCKED_QUEUE_SEND,
+	BLOCKED_QUEUE_RECV
 } task_block_reason_t;
 
 typedef enum {
@@ -66,6 +69,19 @@ typedef struct {
 	mutex_state_t state; // the current state of the mutex(locked or unlocked)
 	waitlist_t waitlist;
 } mutex_t;
+
+typedef struct {
+	uint8_t *buffer; // ring buffer storage, allocated and owned by the application
+					// uint8_t rather than void* so item N is accessible by buffer + N * item_size
+	uint32_t item_size; // bytes per item, fixed at creation
+	uint32_t max_items; // max number of items the buffer can hold, fixed at creation
+	uint32_t count; // number of items in the buffer, 
+	uint32_t head; // index to write
+	uint32_t tail; // index to read
+	waitlist_t send_waitlist; // tasks waiting to send to the queue, added to the waitlist when the queue is full
+	waitlist_t recv_waitlist; // tasks waiting to receive from the queue, added to the waitlist when the queue is empty
+	uint32_t dropped_count; // tracks failed send, doesnt reset, diagnosis tool for isr
+} queue_t;
 
 struct TCB_t {
 	uint32_t stack_pointer;
@@ -174,8 +190,8 @@ os_err_t os_mutex_create(mutex_t *mtx);
 
 /*
 @brief
-	Locks mtx and returns immediately if unlocked, otherwise blocks the calling
-	task for up to timeout ticks; does not support recursive locks. If mtx is held
+	Locks mtx and returns immediately if mutex is available, otherwise blocks the calling
+	task for up to timeout ticks. Does not support recursive locks. If mtx is held
 	by a lower priority task, that owner's effective priority is boosted to the
 	caller's to prevent priority inversion. If the owner is itself blocked waiting
 	on another mutex, the boost propagates to that mutex's owner as well, and so on
@@ -208,6 +224,16 @@ os_err_t os_mutex_lock(mutex_t *mtx, uint16_t timeout);
 @retval OS_ERR_NULL_PTR - mtx passed in is NULL
 */
 os_err_t os_mutex_unlock(mutex_t *mtx);
+
+os_err_t os_queue_create(queue_t *queue, void *buffer, uint32_t item_size, uint32_t max_items, schedule_policy_t schedule_policy);
+
+os_err_t os_queue_send_from_task(queue_t *queue, const void *item, uint32_t timeout);
+
+os_err_t os_queue_send_from_isr(queue_t *queue, const void *item);
+
+os_err_t os_queue_recv_from_task(queue_t *queue, void *item, uint32_t timeout);
+
+os_err_t os_queue_recv_from_isr(queue_t *queue, void *item);
 
 // optional user hook for the idle task, called once per idle loop iteration
 __attribute__((weak)) void os_idle_task_hook(void) { /*default is empty, user can override this function*/ }
