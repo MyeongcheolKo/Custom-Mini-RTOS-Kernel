@@ -52,7 +52,7 @@ os_err_t os_task_create(void (*task_handler)(void), uint8_t priority, uint32_t *
 	if (task_count >= OS_MAX_TASKS)
 		return OS_ERR_MAX_TASKS;
 	if (priority < OS_PRIORITY_HIGHEST || priority > OS_PRIORITY_LOWEST)
-		return OS_ERR_INVALID_PRIORITY;
+		return OS_ERR_OUT_OF_RANGE;
 	if (task_stack_base == NULL)
 		return OS_ERR_NULL_PTR;
 		
@@ -296,7 +296,7 @@ os_err_t os_mutex_unlock(mutex_t *mtx)
 os_err_t os_queue_create(queue_t *queue, void *buffer, uint32_t item_size, uint32_t max_items, schedule_policy_t schedule_policy)
 {
 	if (queue == NULL || buffer == NULL) return OS_ERR_NULL_PTR;
-	if (item_size == 0 || max_items == 0) return OS_ERR_INVALID_ARGUMENT;
+	if (item_size == 0 || max_items == 0) return OS_ERR_OUT_OF_RANGE;
 	if (schedule_policy != FIFO && schedule_policy != PRIORITY) return OS_ERR_INVALID_SCEHDULE_POLICY;
 	
 	queue->buffer = (uint8_t*)buffer; // store the byte address of the buffer user passed in

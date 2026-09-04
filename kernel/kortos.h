@@ -16,8 +16,7 @@ typedef struct TCB_t TCB_t; // forward declaration of TCB_t so it can be used in
 
 typedef enum {
 	OS_OK = 0,
-	OS_ERR_INVALID_ARGUMENT,
-	OS_ERR_INVALID_PRIORITY,
+	OS_ERR_OUT_OF_RANGE,
 	OS_ERR_MAX_TASKS,
 	OS_ERR_NULL_PTR,
 	OS_ERR_UNAVAILABLE,
@@ -120,7 +119,7 @@ void os_kernel_start(void);
 
 @retval OS_OK - task successfully created
 @retval OS_ERR_MAX_TASKS - OS_MAX_TASKS have already been created
-@retval OS_ERR_INVALID_PRIORITY - priority is outside OS_PRIORITY_HIGHEST..OS_PRIORITY_LOWEST
+@retval OS_ERR_OUT_OF_RANGE - priority is outside OS_PRIORITY_HIGHEST..OS_PRIORITY_LOWEST
 @retval OS_ERR_NULL_PTR - task_stack_base passed in is NULL
 */
 os_err_t os_task_create(void (*task_handler)(void), uint8_t priority, uint32_t *task_stack_base, uint32_t task_stack_size);
@@ -225,14 +224,90 @@ os_err_t os_mutex_lock(mutex_t *mtx, uint32_t timeout);
 */
 os_err_t os_mutex_unlock(mutex_t *mtx);
 
+/*
+@brief
+	Initializes queue as an empty ring buffer over buffer, storing max_items elements of
+	item_size bytes each, and the schedule_policy used to pick which blocked task to unblock
+	from send/recv_waitlist (FIFO = longest waiting, PRIORITY = highest priority)
+
+@param queue Pointer to the queue to initialize
+@param buffer Pointer to storage for max_items * item_size bytes, allocated and owned by the application
+@param item_size Size in bytes of one queue item
+@param max_items Max number of items the queue can hold
+@param schedule_policy The policy used to schedule wait list tasks
+
+@retval OS_OK - queue initialized
+@retval OS_ERR_NULL_PTR - queue or buffer passed in is NULL
+@retval OS_ERR_OUT_OF_RANGE - item_size or max_items is 0
+@retval OS_ERR_INVALID_SCEHDULE_POLICY - schedule_policy is neither FIFO nor PRIORITY
+*/
 os_err_t os_queue_create(queue_t *queue, void *buffer, uint32_t item_size, uint32_t max_items, schedule_policy_t schedule_policy);
 
+/*
+@brief
+	Copies item into queue and returns immediately if a slot is free, otherwise blocks
+	the calling task for up to timeout ticks. Rechecks the queue on every wakeup in case
+	another task or an ISR takes the freed slot first. After copying, wakes a task blocked
+	on queue's recv_waitlist if one is waiting and yields to let it run if it outranks
+	the caller
+
+@param queue Pointer to the queue to send to
+@param item Pointer to the item to copy into the queue, item_size bytes are read
+@param timeout Number of ticks to block for if queue is full, 0 to not block
+
+@retval OS_OK - item sent, either immediately or after a slot freed up after waiting
+@retval OS_ERR_UNAVAILABLE - queue was full and timeout was 0, or timeout ticks elapsed before a slot freed
+@retval OS_ERR_NULL_PTR - queue or item passed in is NULL
+@retval OS_ERR_WAITLIST_FULL - queue's send_waitlist is already full when the queue was full and attempting to block the task
+*/
 os_err_t os_queue_send_from_task(queue_t *queue, const void *item, uint32_t timeout);
 
+/*
+@brief
+	ISR-safe send: same as os_queue_send_from_task() with timeout hardcoded to 0, since
+	an ISR can never block. Increments queue->dropped_count on failure as a diagnostic
+	counter for dropped sends
+
+@param queue Pointer to the queue to send to
+@param item Pointer to the item to copy into the queue, item_size bytes are read
+
+@retval OS_OK - item sent
+@retval OS_ERR_UNAVAILABLE - queue was full, item dropped and dropped_count incremented
+@retval OS_ERR_NULL_PTR - queue or item passed in is NULL
+*/
 os_err_t os_queue_send_from_isr(queue_t *queue, const void *item);
 
+/*
+@brief
+	Copies the oldest item out of queue into item and returns immediately if the queue is
+	non-empty, otherwise blocks the calling task for up to timeout ticks. Rechecks the
+	queue on every wakeup in case another task or an ISR takes the item first. After
+	copying, wakes a task blocked on queue's send_waitlist if one is waiting and yields
+	to let it run if it outranks the caller
+
+@param queue Pointer to the queue to receive from
+@param item Pointer to receive the copied item, item_size bytes are written
+@param timeout Number of ticks to block for if queue is empty, 0 to not block
+
+@retval OS_OK - item received, either immediately or after an item arrived while waiting
+@retval OS_ERR_UNAVAILABLE - queue was empty and timeout was 0, or timeout ticks elapsed before an item arrived
+@retval OS_ERR_NULL_PTR - queue or item passed in is NULL
+@retval OS_ERR_WAITLIST_FULL - queue's recv_waitlist is already full when the queue was empty and attempting to block the task
+*/
 os_err_t os_queue_recv_from_task(queue_t *queue, void *item, uint32_t timeout);
 
+/*
+@brief
+	ISR-safe receive: same as os_queue_recv_from_task() with timeout hardcoded to 0, since
+	an ISR can never block
+
+@param queue Pointer to the queue to receive from
+@param item Pointer to receive the copied item, item_size bytes are written
+
+@retval OS_OK - item received
+@retval OS_ERR_UNAVAILABLE - queue was empty
+@retval OS_ERR_NULL_PTR - queue or item passed in is NULL
+*/
 os_err_t os_queue_recv_from_isr(queue_t *queue, void *item);
 
 // optional user hook for the idle task, called once per idle loop iteration
