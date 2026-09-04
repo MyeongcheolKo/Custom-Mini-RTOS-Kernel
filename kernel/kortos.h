@@ -160,7 +160,7 @@ os_err_t os_sem_create(semaphore_t *sem, uint8_t initial_count, schedule_policy_
 @retval OS_OK - semaphore acquired, either immediately or after a post arrived while waiting
 @retval OS_ERR_UNAVAILABLE - sem was unavailable and timeout was 0, or timeout ticks elapsed before it was posted
 @retval OS_ERR_NULL_PTR - sem passed in is NULL
-@retval OS_ERR_FULL - sem's wait list is already full
+@retval OS_ERR_WAITLIST_FULL - sem's wait list is already full
 */
 os_err_t os_sem_wait(semaphore_t *sem, uint32_t timeout);
 
@@ -205,7 +205,7 @@ os_err_t os_mutex_create(mutex_t *mtx);
 @retval OS_ERR_MTX_RECURSIVE_LOCK - calling task already owns mtx
 @retval OS_ERR_UNAVAILABLE - mtx was unavailable and timeout was 0, or timeout ticks elapsed before it unlocked
 @retval OS_ERR_NULL_PTR - mtx passed in is NULL
-@retval OS_ERR_FULL - mtx's wait list is already full
+@retval OS_ERR_WAITLIST_FULL - mtx's wait list is already full
 */
 os_err_t os_mutex_lock(mutex_t *mtx, uint32_t timeout);
 

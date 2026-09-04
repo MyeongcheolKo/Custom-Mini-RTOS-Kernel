@@ -320,8 +320,14 @@ os_err_t os_queue_send_from_task(queue_t *queue, const void *item, uint32_t time
 
 	uint32_t prev_int_state = port_enter_critical();
 
-	// check if the queue is full
-	if (queue->count >= queue->max_items)
+	// calculate the absolute deadline tick for the task to unblock
+	uint32_t deadline_tick = (timeout == (uint32_t)OS_WAIT_FOREVER) ? 0 : systick_count + timeout;
+
+	// check if the queue is full, recheck every time the task wakes, since this task
+	// might not be the immediate next task to run when a slot frees up in the queue, 
+	// another task with higher priority or an ISR can take the slot between this task
+	//  being unblocked and it actually being scheduled
+	while (queue->count >= queue->max_items)
 	{
 		// the queue is full, check if the user wants to block the task
 		if (timeout == 0) 
@@ -330,9 +336,27 @@ os_err_t os_queue_send_from_task(queue_t *queue, const void *item, uint32_t time
 			return OS_ERR_UNAVAILABLE;
 		}
 
-		// the queue is full and the user want to block the task to wait for the queue to be read, 
-		// add task to send waitlist and block it until the queue is available or timeout occurs
-		os_err_t block_result = waitlist_block_current(&queue->send_waitlist, timeout, BLOCKED_QUEUE_SEND, prev_int_state);
+		// calculate the remaining timeout ticks for the task. If this is not the first
+		// iteration, a slot in the queue may have been freed but another task or an ISR 
+		// may have taken it, so we need to reblock the task with a new timeout value
+		uint32_t remaining_timeout = (uint32_t)(OS_WAIT_FOREVER);
+		if (deadline_tick != 0) // if deadline_tick is 0, the user wants to wait forever
+		{
+			// check if the timeout has already elapsed before blocking the task again
+			if ((int32_t)(systick_count - deadline_tick) >= 0)
+			{
+				// the timeout passed
+				port_exit_critical(prev_int_state);
+				return OS_ERR_UNAVAILABLE; // timeout has already elapsed
+			}
+			remaining_timeout = deadline_tick - systick_count;
+		}
+
+		// the queue is full and the user want to block the task to wait for a slot 
+		// in the queue to be freed, add task to send waitlist and block it until the 
+		// queue is available or remaining_timeout passes
+		os_err_t block_result = waitlist_block_current(&queue->send_waitlist, remaining_timeout, 
+														BLOCKED_QUEUE_SEND, prev_int_state);
 		if (block_result != OS_OK) return block_result;
 
 		// reaches here when the task was blocked successfully and wakes up after 
@@ -341,7 +365,9 @@ os_err_t os_queue_send_from_task(queue_t *queue, const void *item, uint32_t time
 		{
 			return OS_ERR_UNAVAILABLE; // the task was unblocked due to timeout so the queue was unavailable
 		}
-		// the task was unblocked due to queue being available, proceed
+		// the task was unblocked due a slot in the queue was freed, 
+		// loop back to confirm the queue is not full since another task
+		// or an ISR could have taken the slot before this task was scheduled to run
 
 		prev_int_state = port_enter_critical(); // re-enter critical section, since waitlist_block_current exits critical section
 	}
@@ -380,8 +406,14 @@ os_err_t os_queue_recv_from_task(queue_t *queue, void *item, uint32_t timeout)
 
 	uint32_t prev_int_state = port_enter_critical();
 
-	// check if the queue contains data
-	if (queue->count == 0)
+	// calculate the absolute deadline tick for the task to unblock
+	uint32_t deadline_tick = (timeout == (uint32_t)OS_WAIT_FOREVER) ? 0 : systick_count + timeout;
+
+	// check if the queue is empty, recheck every time the task wakes, since this task
+	// might not be the immediate next task to run when an item is added to the queue, 
+	// another task with higher priority or an ISR can take took the item between this task
+	// being unblocked and it actually being scheduled
+	while (queue->count == 0)
 	{
 		// the queue is empty, check if the user wants to block the task
 		if (timeout == 0) 
@@ -390,9 +422,27 @@ os_err_t os_queue_recv_from_task(queue_t *queue, void *item, uint32_t timeout)
 			return OS_ERR_UNAVAILABLE;
 		}
 
-		// the queue is empty and the user want to wait for send to the queue to have data,
-		// add task to receive waitlist and block it until the queue is available or timeout occurs
-		os_err_t block_result = waitlist_block_current(&queue->recv_waitlist, timeout, BLOCKED_QUEUE_RECV, prev_int_state);
+		// calculate the remaining timeout ticks for the task. If this is not the first
+		// iteration, an item may have been added to the queue but another task or an ISR 
+		// may have taken it, so we need to reblock the task with a new timeout value
+		uint32_t remaining_timeout = (uint32_t)(OS_WAIT_FOREVER);
+		if (deadline_tick != 0) // if deadline_tick is 0, the user wants to wait forever
+		{
+			// check if the timeout has already elapsed before blocking the task again
+			if ((int32_t)(systick_count - deadline_tick) >= 0)
+			{
+				// the timeout passed
+				port_exit_critical(prev_int_state);
+				return OS_ERR_UNAVAILABLE; // timeout has already elapsed
+			}
+			remaining_timeout = deadline_tick - systick_count;
+		}
+
+		// the queue is empty and the user want to block the task to wait for an item
+		// to be added to the queue, add task to recv waitlist and block it until the
+		// queue is available or remaining_timeout passes
+		os_err_t block_result = waitlist_block_current(&queue->recv_waitlist, remaining_timeout,
+														BLOCKED_QUEUE_RECV, prev_int_state);
 		if (block_result != OS_OK) return block_result;
 
 		// reaches here when the task was blocked successfully and wakes up after 
@@ -401,7 +451,9 @@ os_err_t os_queue_recv_from_task(queue_t *queue, void *item, uint32_t timeout)
 		{
 			return OS_ERR_UNAVAILABLE; // the task was unblocked due to timeout so the queue was unavailable
 		}
-		// the task was unblocked due to queue being available, proceed
+		// the task was unblocked due an item being added to the queue, 
+		// loop back to confirm the queue is empty since another task
+		// or an ISR could have taken the item before this task was scheduled to run
 
 		prev_int_state = port_enter_critical(); // re-enter critical section, since waitlist_block_current exits critical section
 	}
